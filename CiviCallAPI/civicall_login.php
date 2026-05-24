@@ -43,7 +43,7 @@ if ($isGoogleLogin == 1) {
     if ($result->num_rows === 0) {
         $middleName = '';
         $address = '';
-        $campusId = 1;
+        $campusId = 0;
         $userCategory = 0;
         $createdAt = date('Y-m-d H:i:s');
         

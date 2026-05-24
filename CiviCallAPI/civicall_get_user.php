@@ -14,7 +14,7 @@ if ($authToken === '') {
     exit;
 }
 
-$stmt = $db->prepare("SELECT userId FROM tbl_userdevice WHERE authToken = ? AND isActive = 1");
+$stmt = $db->prepare("SELECT userId, lastUsed, isActive FROM tbl_userdevice WHERE authToken = ?");
 $stmt->bind_param("s", $authToken);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -31,7 +31,26 @@ if ($result->num_rows === 0) {
 
 $row = $result->fetch_assoc();
 $userId = $row['userId'];
+$lastUsed = $row['lastUsed'];
+$isActive = $row['isActive'];
 $stmt->close();
+
+// Check for session expiry (30 days)
+$expiryDate = date('Y-m-d H:i:s', strtotime('-30 days'));
+if ($isActive == 1 && strtotime($lastUsed) < strtotime($expiryDate)) {
+    // Deactivate the session and clear the token
+    $deactivateStmt = $db->prepare("UPDATE tbl_userdevice SET isActive = 0, authToken = NULL WHERE authToken = ?");
+    $deactivateStmt->bind_param("s", $authToken);
+    $deactivateStmt->execute();
+    $deactivateStmt->close();
+
+    $response['success'] = false;
+    $response['message'] = 'Session expired. Please login again.';
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
 
 $userStmt = $db->prepare("
     SELECT 
