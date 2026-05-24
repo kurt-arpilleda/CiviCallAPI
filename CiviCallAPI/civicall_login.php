@@ -14,6 +14,7 @@ $photoUrl = isset($_POST['photoUrl']) ? trim($_POST['photoUrl']) : '';
 $birthDay = isset($_POST['birthDay']) ? trim($_POST['birthDay']) : '';
 $gender = isset($_POST['gender']) ? (int)$_POST['gender'] : 2;
 $mobileNum = isset($_POST['mobileNum']) ? trim($_POST['mobileNum']) : '';
+$fcmToken = isset($_POST['fcmToken']) ? trim($_POST['fcmToken']) : '';
 
 if ($deviceId === '') {
     $response['success'] = false;
@@ -88,8 +89,8 @@ if ($isGoogleLogin == 1) {
     $checkDeviceStmt->store_result();
     
     if ($checkDeviceStmt->num_rows > 0) {
-        $updateDeviceStmt = $db->prepare("UPDATE tbl_userdevice SET lastUsed = NOW(), isActive = 1, authToken = ? WHERE userId = ? AND deviceId = ?");
-        $updateDeviceStmt->bind_param("sis", $authToken, $userId, $deviceId);
+        $updateDeviceStmt = $db->prepare("UPDATE tbl_userdevice SET lastUsed = NOW(), isActive = 1, authToken = ?, fcmToken = ? WHERE userId = ? AND deviceId = ?");
+        $updateDeviceStmt->bind_param("ssis", $authToken, $fcmToken, $userId, $deviceId);
         $updateDeviceStmt->execute();
         $updateDeviceStmt->close();
     } else {
@@ -98,8 +99,8 @@ if ($isGoogleLogin == 1) {
         $deactivateStmt->execute();
         $deactivateStmt->close();
         
-        $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken) VALUES (?, ?, NOW(), 1, ?)");
-        $insertDeviceStmt->bind_param("iss", $userId, $deviceId, $authToken);
+        $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken, fcmToken) VALUES (?, ?, NOW(), 1, ?, ?)");
+        $insertDeviceStmt->bind_param("isss", $userId, $deviceId, $authToken, $fcmToken);
         if (!$insertDeviceStmt->execute()) {
             $response['success'] = false;
             $response['message'] = 'Failed to register device.';
@@ -167,8 +168,8 @@ if ($isGoogleLogin == 1) {
     $checkDeviceStmt->store_result();
     
     if ($checkDeviceStmt->num_rows > 0) {
-        $updateDeviceStmt = $db->prepare("UPDATE tbl_userdevice SET lastUsed = NOW(), isActive = 1, authToken = ? WHERE userId = ? AND deviceId = ?");
-        $updateDeviceStmt->bind_param("sis", $authToken, $userId, $deviceId);
+        $updateDeviceStmt = $db->prepare("UPDATE tbl_userdevice SET lastUsed = NOW(), isActive = 1, authToken = ?, fcmToken = ? WHERE userId = ? AND deviceId = ?");
+        $updateDeviceStmt->bind_param("ssis", $authToken, $fcmToken, $userId, $deviceId);
         $updateDeviceStmt->execute();
         $updateDeviceStmt->close();
     } else {
@@ -177,8 +178,8 @@ if ($isGoogleLogin == 1) {
         $deactivateStmt->execute();
         $deactivateStmt->close();
         
-        $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken) VALUES (?, ?, NOW(), 1, ?)");
-        $insertDeviceStmt->bind_param("iss", $userId, $deviceId, $authToken);
+        $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken, fcmToken) VALUES (?, ?, NOW(), 1, ?, ?)");
+        $insertDeviceStmt->bind_param("isss", $userId, $deviceId, $authToken, $fcmToken);
         if (!$insertDeviceStmt->execute()) {
             $response['success'] = false;
             $response['message'] = 'Failed to register device.';
