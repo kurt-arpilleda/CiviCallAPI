@@ -33,7 +33,25 @@ $row = $result->fetch_assoc();
 $userId = $row['userId'];
 $stmt->close();
 
-$userStmt = $db->prepare("SELECT userId, firstName, middleName, lastName, email, mobileNum, photo_url, isVerified FROM tbl_user WHERE userId = ?");
+$userStmt = $db->prepare("
+    SELECT 
+        u.userId, u.firstName, u.middleName, u.lastName, u.email,
+        u.mobileNum, u.emergencyNum, u.address,
+        u.campus AS campusId, c.campusName,
+        u.department AS departmentId, d.departmentName,
+        u.course AS courseId, co.courseName,
+        u.userCategory, u.birthDay, u.gender,
+        u.nstp AS nstpId, n.nstpType,
+        u.srCode, u.yrSection,
+        u.photo_url, u.isVerified,
+        u.signup_type, u.created_at
+    FROM tbl_user u
+    LEFT JOIN tbl_campus c ON c.campusId = u.campus
+    LEFT JOIN tbl_department d ON d.departmentId = u.department
+    LEFT JOIN tbl_course co ON co.courseId = u.course
+    LEFT JOIN tbl_nstp n ON n.nstpId = u.nstp
+    WHERE u.userId = ?
+");
 $userStmt->bind_param("i", $userId);
 $userStmt->execute();
 $userResult = $userStmt->get_result();
@@ -41,6 +59,13 @@ $userResult = $userStmt->get_result();
 if ($userResult->num_rows > 0) {
     $user = $userResult->fetch_assoc();
     $user['isVerified'] = (int)$user['isVerified'];
+    $user['campusId'] = (int)$user['campusId'];
+    $user['departmentId'] = isset($user['departmentId']) ? (int)$user['departmentId'] : null;
+    $user['courseId'] = isset($user['courseId']) ? (int)$user['courseId'] : null;
+    $user['nstpId'] = isset($user['nstpId']) ? (int)$user['nstpId'] : null;
+    $user['userCategory'] = isset($user['userCategory']) ? (int)$user['userCategory'] : null;
+    $user['gender'] = isset($user['gender']) ? (int)$user['gender'] : null;
+    $user['signup_type'] = (int)$user['signup_type'];
     $response['success'] = true;
     $response['user'] = $user;
 } else {
