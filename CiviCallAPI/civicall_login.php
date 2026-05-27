@@ -94,11 +94,6 @@ if ($isGoogleLogin == 1) {
         $updateDeviceStmt->execute();
         $updateDeviceStmt->close();
     } else {
-        $deactivateStmt = $db->prepare("UPDATE tbl_userdevice SET isActive = 0 WHERE userId = ?");
-        $deactivateStmt->bind_param("i", $userId);
-        $deactivateStmt->execute();
-        $deactivateStmt->close();
-        
         $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken, fcmToken) VALUES (?, ?, NOW(), 1, ?, ?)");
         $insertDeviceStmt->bind_param("isss", $userId, $deviceId, $authToken, $fcmToken);
         if (!$insertDeviceStmt->execute()) {
@@ -173,11 +168,6 @@ if ($isGoogleLogin == 1) {
         $updateDeviceStmt->execute();
         $updateDeviceStmt->close();
     } else {
-        $deactivateStmt = $db->prepare("UPDATE tbl_userdevice SET isActive = 0 WHERE userId = ?");
-        $deactivateStmt->bind_param("i", $userId);
-        $deactivateStmt->execute();
-        $deactivateStmt->close();
-        
         $insertDeviceStmt = $db->prepare("INSERT INTO tbl_userdevice (userId, deviceId, lastUsed, isActive, authToken, fcmToken) VALUES (?, ?, NOW(), 1, ?, ?)");
         $insertDeviceStmt->bind_param("isss", $userId, $deviceId, $authToken, $fcmToken);
         if (!$insertDeviceStmt->execute()) {
