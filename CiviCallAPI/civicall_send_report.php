@@ -53,8 +53,9 @@ $tokenRow = $tokenResult->fetch_assoc();
 $userId = $tokenRow['userId'];
 $tokenStmt->close();
 
-$fileName = null;
+$fileName = ''; 
 
+// Handle image upload if present
 if (isset($_FILES['reportImage']) && $_FILES['reportImage']['error'] === UPLOAD_ERR_OK) {
     $allowedMime = ['image/jpeg', 'image/png', 'image/webp'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -119,7 +120,7 @@ if ($insertStmt->execute()) {
     $response['success'] = true;
     $response['message'] = 'Report submitted successfully.';
 } else {
-    if ($fileName !== null && file_exists($uploadDir . $fileName)) {
+    if ($fileName !== '' && file_exists($uploadDir . $fileName)) {
         unlink($uploadDir . $fileName);
     }
     $response['success'] = false;
