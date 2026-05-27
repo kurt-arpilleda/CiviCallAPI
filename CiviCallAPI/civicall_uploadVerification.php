@@ -79,7 +79,7 @@ if ($_FILES['verificationFile']['size'] > $maxSize) {
 $ext = pathinfo($_FILES['verificationFile']['name'], PATHINFO_EXTENSION);
 if (empty($ext)) {
     $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'];
-    $ext = $extMap[$mimeType] ?? 'bin';
+    $ext = $extMap[$mimeType] ?? 'jpg';
 }
 
 $timestamp = time();
@@ -123,10 +123,25 @@ if (!move_uploaded_file($_FILES['verificationFile']['tmp_name'], $destPath)) {
     exit;
 }
 
-$insertStmt = $db->prepare("REPLACE INTO tbl_userverification (userId, fileName, fileType, dateTime) VALUES (?, ?, ?, NOW())");
-$insertStmt->bind_param("isi", $userId, $fileName, $fileType);
+$checkStmt = $db->prepare("SELECT userId FROM tbl_userverification WHERE userId = ?");
+$checkStmt->bind_param("i", $userId);
+$checkStmt->execute();
+$checkStmt->store_result();
 
-if ($insertStmt->execute()) {
+if ($checkStmt->num_rows > 0) {
+    $updateStmt = $db->prepare("UPDATE tbl_userverification SET fileName = ?, fileType = ?, dateTime = NOW() WHERE userId = ?");
+    $updateStmt->bind_param("sii", $fileName, $fileType, $userId);
+    $execResult = $updateStmt->execute();
+    $updateStmt->close();
+} else {
+    $insertStmt = $db->prepare("INSERT INTO tbl_userverification (userId, fileName, fileType, dateTime) VALUES (?, ?, ?, NOW())");
+    $insertStmt->bind_param("isi", $userId, $fileName, $fileType);
+    $execResult = $insertStmt->execute();
+    $insertStmt->close();
+}
+$checkStmt->close();
+
+if ($execResult) {
     $response['success'] = true;
     $response['message'] = 'Verification document uploaded successfully.';
 } else {
@@ -135,7 +150,6 @@ if ($insertStmt->execute()) {
     $response['message'] = 'Database update failed.';
 }
 
-$insertStmt->close();
 header('Content-Type: application/json');
 echo json_encode($response);
 $db->close();
