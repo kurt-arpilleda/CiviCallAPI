@@ -35,10 +35,8 @@ $lastUsed = $row['lastUsed'];
 $isActive = $row['isActive'];
 $stmt->close();
 
-// Check for session expiry (30 days)
 $expiryDate = date('Y-m-d H:i:s', strtotime('-30 days'));
 if ($isActive == 1 && strtotime($lastUsed) < strtotime($expiryDate)) {
-    // Deactivate the session and clear the token
     $deactivateStmt = $db->prepare("UPDATE tbl_userdevice SET isActive = 0, authToken = NULL WHERE authToken = ?");
     $deactivateStmt->bind_param("s", $authToken);
     $deactivateStmt->execute();
@@ -59,7 +57,8 @@ $userStmt = $db->prepare("
         u.campus AS campusId, c.campusName,
         u.department AS departmentId, d.departmentName,
         u.course AS courseId, co.courseName,
-        u.userCategory, u.birthDay, u.gender,
+        u.userType, ut.userTypeName,
+        u.birthDay, u.gender,
         u.nstp AS nstpId, n.nstpType,
         u.srCode, u.yrSection,
         u.photo_url, u.isVerified,
@@ -69,6 +68,7 @@ $userStmt = $db->prepare("
     LEFT JOIN tbl_department d ON d.departmentId = u.department
     LEFT JOIN tbl_course co ON co.courseId = u.course
     LEFT JOIN tbl_nstp n ON n.nstpId = u.nstp
+    LEFT JOIN tbl_usertype ut ON ut.userTypeId = u.userType
     WHERE u.userId = ?
 ");
 $userStmt->bind_param("i", $userId);
@@ -82,7 +82,7 @@ if ($userResult->num_rows > 0) {
     $user['departmentId'] = isset($user['departmentId']) ? (int)$user['departmentId'] : null;
     $user['courseId'] = isset($user['courseId']) ? (int)$user['courseId'] : null;
     $user['nstpId'] = isset($user['nstpId']) ? (int)$user['nstpId'] : null;
-    $user['userCategory'] = isset($user['userCategory']) ? (int)$user['userCategory'] : null;
+    $user['userType'] = isset($user['userType']) ? (int)$user['userType'] : null;
     $user['gender'] = isset($user['gender']) ? (int)$user['gender'] : null;
     $user['signup_type'] = (int)$user['signup_type'];
     $response['success'] = true;

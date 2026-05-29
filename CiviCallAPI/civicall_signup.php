@@ -9,7 +9,7 @@ $lastName     = isset($_POST['lastName'])     ? trim($_POST['lastName'])     : '
 $address      = isset($_POST['address'])      ? trim($_POST['address'])      : '';
 $mobileNum    = isset($_POST['mobileNum'])    ? trim($_POST['mobileNum'])    : '';
 $campusId     = isset($_POST['campusId'])     ? (int)$_POST['campusId']      : 0;
-$userCategory = isset($_POST['userCategory']) ? (int)$_POST['userCategory'] : -1;
+$userTypeId   = isset($_POST['userTypeId'])   ? (int)$_POST['userTypeId']    : 0;
 $birthDay     = isset($_POST['birthDay'])     ? trim($_POST['birthDay'])     : '';
 $gender       = isset($_POST['gender'])       ? (int)$_POST['gender']        : -1;
 $email        = isset($_POST['email'])        ? trim($_POST['email'])        : '';
@@ -17,7 +17,7 @@ $password     = isset($_POST['password'])     ? $_POST['password']           : '
 
 if (
     $firstName === '' || $lastName === '' || $address === '' ||
-    $mobileNum === '' || $campusId === 0  || $userCategory === -1 ||
+    $mobileNum === '' || $campusId === 0  || $userTypeId === 0 ||
     $birthDay  === '' || $gender   === -1 || $email === '' || $password === ''
 ) {
     $response['success'] = false;
@@ -64,7 +64,7 @@ $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
 $stmt = $db->prepare(
     "INSERT INTO tbl_user 
-     (firstName, middleName, lastName, address, mobileNum, campus, userCategory, birthDay, gender, email, password, created_at)
+     (firstName, middleName, lastName, address, mobileNum, campus, userType, birthDay, gender, email, password, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
 );
 
@@ -76,7 +76,7 @@ $stmt->bind_param(
     $address,
     $mobileNum,
     $campusId,
-    $userCategory,
+    $userTypeId,
     $birthDay,
     $gender,
     $email,

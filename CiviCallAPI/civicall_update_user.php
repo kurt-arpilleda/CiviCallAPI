@@ -42,7 +42,7 @@ $emergencyNum = isset($_POST['emergencyNum']) ? trim($_POST['emergencyNum']) : n
 $campusId     = isset($_POST['campusId'])     ? (int)$_POST['campusId']      : null;
 $departmentId = isset($_POST['departmentId']) ? (int)$_POST['departmentId'] : null;
 $courseId     = isset($_POST['courseId'])     ? (int)$_POST['courseId']      : null;
-$userCategory = isset($_POST['userCategory']) ? (int)$_POST['userCategory'] : null;
+$userTypeId   = isset($_POST['userTypeId'])   ? (int)$_POST['userTypeId']    : null;
 $birthDay     = isset($_POST['birthDay'])     ? trim($_POST['birthDay'])     : null;
 $gender       = isset($_POST['gender'])       ? (int)$_POST['gender']        : null;
 $nstpId       = isset($_POST['nstpId'])       ? (int)$_POST['nstpId']        : null;
@@ -77,7 +77,7 @@ $updateStmt = $db->prepare("
         campus = COALESCE(?, campus),
         department = COALESCE(?, department),
         course = COALESCE(?, course),
-        userCategory = COALESCE(?, userCategory),
+        userType = COALESCE(?, userType),
         birthDay = COALESCE(?, birthDay),
         gender = COALESCE(?, gender),
         nstp = COALESCE(?, nstp),
@@ -89,7 +89,7 @@ $updateStmt = $db->prepare("
 $updateStmt->bind_param(
     "ssssssiiiisiissi",
     $firstName, $middleName, $lastName, $address, $mobileNum, $emergencyNum,
-    $campusId, $departmentId, $courseId, $userCategory,
+    $campusId, $departmentId, $courseId, $userTypeId,
     $birthDay, $gender, $nstpId, $srCode, $yrSection,
     $userId
 );

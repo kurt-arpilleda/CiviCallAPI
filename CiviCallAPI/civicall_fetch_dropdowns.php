@@ -39,11 +39,21 @@ if ($nstpResult) {
     }
 }
 
+$userTypeQuery = "SELECT userTypeId, userTypeName FROM tbl_usertype ORDER BY userTypeName ASC";
+$userTypeResult = $db->query($userTypeQuery);
+$userTypes = array();
+if ($userTypeResult) {
+    while ($row = $userTypeResult->fetch_assoc()) {
+        $userTypes[] = array('id' => (int)$row['userTypeId'], 'name' => $row['userTypeName']);
+    }
+}
+
 $response['success'] = true;
 $response['campuses'] = $campuses;
 $response['departments'] = $departments;
 $response['courses'] = $courses;
 $response['nstp'] = $nstpList;
+$response['userTypes'] = $userTypes;
 
 header('Content-Type: application/json');
 echo json_encode($response);
