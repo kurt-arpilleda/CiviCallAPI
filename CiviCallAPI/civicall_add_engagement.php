@@ -67,7 +67,7 @@ $insertStmt = $db->prepare("
 ");
 
 $insertStmt->bind_param(
-    "iisssssddssiisss",
+    "iisssssddsssiiss",
     $uploaderId,
     $categoryId,
     $title,
