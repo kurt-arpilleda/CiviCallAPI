@@ -1,4 +1,5 @@
 var SUPER_ADMIN_REG_CODE = 'CIVIC2025';
+var verifiedCode = '';
 
 window.addEventListener('load', function() {
   setTimeout(function() {
@@ -8,10 +9,10 @@ window.addEventListener('load', function() {
 });
 
 var btnSuperAdmin = document.getElementById('btnSuperAdmin');
-var btnSubAdmin = document.getElementById('btnSubAdmin');
-var roleSlider = document.getElementById('roleSlider');
+var btnSubAdmin   = document.getElementById('btnSubAdmin');
+var roleSlider    = document.getElementById('roleSlider');
 var panelSuperAdmin = document.getElementById('panelSuperAdmin');
-var panelSubAdmin = document.getElementById('panelSubAdmin');
+var panelSubAdmin   = document.getElementById('panelSubAdmin');
 var currentRole = 'super';
 
 function switchToSuper() {
@@ -43,8 +44,7 @@ function switchToSub() {
 btnSuperAdmin.addEventListener('click', switchToSuper);
 btnSubAdmin.addEventListener('click', switchToSub);
 
-var switchToSuperBtn = document.getElementById('switchToSuperBtn');
-switchToSuperBtn.addEventListener('click', function() {
+document.getElementById('switchToSuperBtn').addEventListener('click', function() {
   switchToSuper();
 });
 
@@ -53,7 +53,7 @@ function makeEyeToggle(eyeBtn, passInput, eyeOpen, eyeClosed) {
   eyeBtn.addEventListener('click', function() {
     show = !show;
     passInput.type = show ? 'text' : 'password';
-    eyeOpen.style.display = show ? 'none' : 'block';
+    eyeOpen.style.display  = show ? 'none' : 'block';
     eyeClosed.style.display = show ? 'block' : 'none';
   });
 }
@@ -80,9 +80,9 @@ makeEyeToggle(
 );
 
 function makeRecaptcha(boxId, checkboxId, labelId) {
-  var box = document.getElementById(boxId);
+  var box      = document.getElementById(boxId);
   var checkbox = document.getElementById(checkboxId);
-  var label = document.getElementById(labelId);
+  var label    = document.getElementById(labelId);
   var done = false;
   var busy = false;
 
@@ -106,7 +106,7 @@ function makeRecaptcha(boxId, checkboxId, labelId) {
 }
 
 var isSuperCaptchaDone = makeRecaptcha('recaptchaBoxSuper', 'rcCheckboxSuper', 'rcLabelSuper');
-var isSubCaptchaDone = makeRecaptcha('recaptchaBoxSub', 'rcCheckboxSub', 'rcLabelSub');
+var isSubCaptchaDone   = makeRecaptcha('recaptchaBoxSub',   'rcCheckboxSub',   'rcLabelSub');
 
 function shake(el) {
   el.style.animation = 'none';
@@ -126,9 +126,65 @@ function shake(el) {
   step();
 }
 
+function showMsg(elId, text, isError) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+  if (isError) {
+    el.className = 'form-error-msg';
+  } else {
+    el.className = 'form-success-msg';
+  }
+}
+
+function hideMsg(elId) {
+  var el = document.getElementById(elId);
+  if (el) el.style.display = 'none';
+}
+
+function setLoading(btn, loading) {
+  if (loading) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  } else {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function doAjaxLogin(role, email, password, btn, errorId) {
+  hideMsg(errorId);
+  setLoading(btn, true);
+
+  var formData = new FormData();
+  formData.append('role',     role);
+  formData.append('email',    email);
+  formData.append('password', password);
+
+  fetch('ajax/adminlogin.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    setLoading(btn, false);
+    if (data.success) {
+      window.location.href = data.redirect;
+    } else {
+      showMsg(errorId, data.message, true);
+      shake(document.querySelector('.login-card'));
+    }
+  })
+  .catch(function() {
+    setLoading(btn, false);
+    showMsg(errorId, 'Network error. Please try again.', true);
+  });
+}
+
 var loginBtnSuper = document.getElementById('loginBtnSuper');
 loginBtnSuper.addEventListener('click', function() {
-  var email = document.getElementById('superEmail').value.trim();
+  var email    = document.getElementById('superEmail').value.trim();
   var password = document.getElementById('superPassword').value;
 
   if (!email || !password) {
@@ -141,13 +197,7 @@ loginBtnSuper.addEventListener('click', function() {
     return;
   }
 
-  loginBtnSuper.classList.add('loading');
-  loginBtnSuper.disabled = true;
-
-  setTimeout(function() {
-    loginBtnSuper.classList.remove('loading');
-    loginBtnSuper.disabled = false;
-  }, 2500);
+  doAjaxLogin('super', email, password, loginBtnSuper, 'superErrorMsg');
 });
 
 document.getElementById('superPassword').addEventListener('keydown', function(e) {
@@ -156,7 +206,7 @@ document.getElementById('superPassword').addEventListener('keydown', function(e)
 
 var loginBtnSub = document.getElementById('loginBtnSub');
 loginBtnSub.addEventListener('click', function() {
-  var email = document.getElementById('subEmail').value.trim();
+  var email    = document.getElementById('subEmail').value.trim();
   var password = document.getElementById('subPassword').value;
 
   if (!email || !password) {
@@ -169,24 +219,18 @@ loginBtnSub.addEventListener('click', function() {
     return;
   }
 
-  loginBtnSub.classList.add('loading');
-  loginBtnSub.disabled = true;
-
-  setTimeout(function() {
-    loginBtnSub.classList.remove('loading');
-    loginBtnSub.disabled = false;
-  }, 2500);
+  doAjaxLogin('sub', email, password, loginBtnSub, 'subErrorMsg');
 });
 
 document.getElementById('subPassword').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') loginBtnSub.click();
 });
 
-var modalBackdrop = document.getElementById('modalBackdrop');
-var modalAccessCode = document.getElementById('modalAccessCode');
-var modalSignup = document.getElementById('modalSignup');
-var accessCodeInput = document.getElementById('accessCodeInput');
-var accessCodeError = document.getElementById('accessCodeError');
+var modalBackdrop    = document.getElementById('modalBackdrop');
+var modalAccessCode  = document.getElementById('modalAccessCode');
+var modalSignup      = document.getElementById('modalSignup');
+var accessCodeInput  = document.getElementById('accessCodeInput');
+var accessCodeError  = document.getElementById('accessCodeError');
 var accessCodeSubmit = document.getElementById('accessCodeSubmit');
 
 function openModal() {
@@ -203,7 +247,6 @@ function closeModal() {
 }
 
 document.getElementById('signupTriggerBtn').addEventListener('click', openModal);
-
 document.getElementById('closeAccessCode').addEventListener('click', closeModal);
 document.getElementById('closeSignup').addEventListener('click', closeModal);
 
@@ -223,20 +266,21 @@ accessCodeSubmit.addEventListener('click', function() {
     return;
   }
 
-  accessCodeSubmit.classList.add('loading');
-  accessCodeSubmit.disabled = true;
+  setLoading(accessCodeSubmit, true);
 
   setTimeout(function() {
-    accessCodeSubmit.classList.remove('loading');
-    accessCodeSubmit.disabled = false;
+    setLoading(accessCodeSubmit, false);
 
     if (code === SUPER_ADMIN_REG_CODE) {
+      verifiedCode = code;
       accessCodeError.classList.remove('visible');
       modalAccessCode.style.display = 'none';
       modalSignup.style.display = 'block';
       modalSignup.style.animation = 'none';
       void modalSignup.offsetWidth;
       modalSignup.style.animation = 'modalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both';
+      hideMsg('signupErrorMsg');
+      hideMsg('signupSuccessMsg');
       document.getElementById('signupName').focus();
     } else {
       accessCodeError.classList.add('visible');
@@ -253,22 +297,54 @@ accessCodeInput.addEventListener('keydown', function(e) {
 
 var signupSubmit = document.getElementById('signupSubmit');
 signupSubmit.addEventListener('click', function() {
-  var name = document.getElementById('signupName').value.trim();
-  var email = document.getElementById('signupEmail').value.trim();
+  var name     = document.getElementById('signupName').value.trim();
+  var email    = document.getElementById('signupEmail').value.trim();
   var password = document.getElementById('signupPassword').value;
+
+  hideMsg('signupErrorMsg');
+  hideMsg('signupSuccessMsg');
 
   if (!name || !email || !password) {
     shake(modalSignup);
     return;
   }
 
-  signupSubmit.classList.add('loading');
-  signupSubmit.disabled = true;
+  setLoading(signupSubmit, true);
 
-  setTimeout(function() {
-    signupSubmit.classList.remove('loading');
-    signupSubmit.disabled = false;
-  }, 2500);
+  var formData = new FormData();
+  formData.append('name',     name);
+  formData.append('email',    email);
+  formData.append('password', password);
+  formData.append('regCode',  verifiedCode);
+
+  fetch('ajax/superadminSignup.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    setLoading(signupSubmit, false);
+    if (data.success) {
+      showMsg('signupSuccessMsg', data.message, false);
+      document.getElementById('signupName').value = '';
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPassword').value = '';
+      setTimeout(function() {
+        closeModal();
+      }, 2000);
+    } else {
+      showMsg('signupErrorMsg', data.message, true);
+      shake(modalSignup);
+    }
+  })
+  .catch(function() {
+    setLoading(signupSubmit, false);
+    showMsg('signupErrorMsg', 'Network error. Please try again.', true);
+  });
+});
+
+document.getElementById('signupPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') signupSubmit.click();
 });
 
 document.getElementById('backToLoginLink').addEventListener('click', function(e) {

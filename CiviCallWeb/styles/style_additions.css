@@ -1,0 +1,25 @@
+/* ── Append these to styles/style.css ── */
+
+.form-error-msg {
+  background: #fff0f1;
+  color: #c0392b;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  display: none;
+}
+
+.form-success-msg {
+  background: #f0fff4;
+  color: #1a7f4b;
+  border: 1px solid #b7ebc8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  display: none;
+}

@@ -97,7 +97,6 @@
 </div>
 
 <div class="right-panel">
-
   <div class="login-card" id="loginCard">
 
     <div class="role-toggle" id="roleToggle">
@@ -112,6 +111,9 @@
       </div>
       <h2 class="card-title">Super Admin</h2>
       <p class="card-sub">Restricted access. Authorized personnel only.</p>
+
+      <div id="superErrorMsg" class="form-error-msg" style="display:none;"></div>
+      <div id="superSuccessMsg" class="form-success-msg" style="display:none;"></div>
 
       <div class="form-group">
         <label for="superEmail">Email Address</label>
@@ -162,7 +164,7 @@
       </div>
 
       <button class="btn-login" id="loginBtnSuper" type="button">
-        <span class="btn-text">Sign In to Dashboard</span>
+        <span class="btn-text">Sign In as Super Admin</span>
         <span class="btn-loader"><span class="spinner"></span></span>
       </button>
 
@@ -173,20 +175,22 @@
       </div>
 
       <div class="card-footer">
-        <button class="signup-trigger-btn" id="signupTriggerBtn" type="button">Create Super Admin Account</button>
-        <p class="card-footer-text" style="margin-top:14px;">
-          Having trouble? Contact <a href="#">appcivicall@gmail.com</a><br>
-          This portal is restricted to authorized administrators only.
-        </p>
+        <button class="switch-to-super-btn" id="signupTriggerBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          Create a Super Admin Account
+        </button>
       </div>
     </div>
 
     <div id="panelSubAdmin" class="role-panel" style="display:none;">
-      <div class="card-icon sub-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#D53A47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:38px;height:38px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <div class="card-icon">
+        <img src="assets/images/icon.png" alt="CiviCall" onerror="this.parentElement.innerHTML='<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23D53A47\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' style=\'width:38px;height:38px;\'><path d=\'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\'></path><circle cx=\'12\' cy=\'7\' r=\'4\'></circle></svg>'">
       </div>
       <h2 class="card-title">Sub Admin</h2>
-      <p class="card-sub">Sign in with your sub-admin credentials.</p>
+      <p class="card-sub">Campus-level access. Sign in with your credentials.</p>
+
+      <div id="subErrorMsg" class="form-error-msg" style="display:none;"></div>
+      <div id="subSuccessMsg" class="form-success-msg" style="display:none;"></div>
 
       <div class="form-group">
         <label for="subEmail">Email Address</label>
@@ -298,6 +302,9 @@
     </div>
     <h3 class="modal-title">Create Super Admin</h3>
     <p class="modal-sub">Fill in your details to register a new super admin account.</p>
+
+    <div id="signupErrorMsg" class="form-error-msg" style="display:none;"></div>
+    <div id="signupSuccessMsg" class="form-success-msg" style="display:none;"></div>
 
     <div class="form-group">
       <label for="signupName">Full Name</label>
