@@ -144,7 +144,7 @@ if ($isGoogleLogin == 1) {
         exit;
     }
 
-    $stmt = $db->prepare("SELECT userId, password FROM tbl_user WHERE email = ? AND signup_type = 0 LIMIT 1");
+   $stmt = $db->prepare("SELECT userId, password, emailVerified FROM tbl_user WHERE email = ? AND signup_type = 0 LIMIT 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -159,20 +159,29 @@ if ($isGoogleLogin == 1) {
         exit;
     }
 
-    $user           = $result->fetch_assoc();
-    $userId         = $user['userId'];
-    $hashedPassword = $user['password'];
-    $stmt->close();
+$user           = $result->fetch_assoc();
+$userId         = $user['userId'];
+$hashedPassword = $user['password'];
+$emailVerified  = (int)$user['emailVerified'];
+$stmt->close();
 
-    if (!password_verify($password, $hashedPassword)) {
-        $response['success'] = false;
-        $response['message'] = 'Invalid email or password.';
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        $db->close();
-        exit;
-    }
+if (!password_verify($password, $hashedPassword)) {
+    $response['success'] = false;
+    $response['message'] = 'Invalid email or password.';
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
 
+if ($emailVerified === 0) {
+    $response['success'] = false;
+    $response['message'] = 'Please verify your email address before logging in. Check your inbox for the verification link.';
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
     $authToken = bin2hex(random_bytes(32));
 
     $checkDeviceStmt = $db->prepare("SELECT deviceId FROM tbl_userdevice WHERE userId = ? AND deviceId = ?");

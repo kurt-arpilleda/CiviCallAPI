@@ -54,8 +54,8 @@ if (!$insertStmt->execute()) {
 }
 $insertStmt->close();
 
-$resetLink = "http://192.168.1.57/CiviCall/CiviCallAPI/civicall_resetPortal.php?token=" . $resetToken;
-$iconUrl = "http://192.168.1.57/CiviCall/CiviCallAPI/images/icon.png";
+$resetLink = "http://192.168.1.56/CiviCall/CiviCallAPI/civicall_resetPortal.php?token=" . $resetToken;
+$iconUrl = "http://192.168.1.56/CiviCall/CiviCallAPI/images/icon.png";
 
 $mail = new PHPMailer(true);
 try {
