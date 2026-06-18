@@ -66,15 +66,17 @@ $query = "
         u.firstName,
         u.lastName,
         u.photo_url,
-        u.campus AS userCampus
+        u.campus AS userCampus,
+        v.voteType AS userVoteType
     FROM tbl_forum f
     JOIN tbl_user u ON u.userId = f.userId
+    LEFT JOIN tbl_forum_votes v ON v.forumId = f.forumId AND v.userId = ?
     WHERE f.isRemove = 0 AND u.campus = ?
     ORDER BY f.createdAt DESC
 ";
 
 $stmt = $db->prepare($query);
-$stmt->bind_param("i", $userCampus);
+$stmt->bind_param("ii", $currentUserId, $userCampus);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -86,6 +88,7 @@ while ($row = $result->fetch_assoc()) {
     $row['downCount'] = (int)$row['downCount'];
     $row['isRemove'] = (int)$row['isRemove'];
     $row['userCampus'] = (int)$row['userCampus'];
+    $row['userVoteType'] = $row['userVoteType'] !== null ? (int)$row['userVoteType'] : null;
     $posts[] = $row;
 }
 $stmt->close();
