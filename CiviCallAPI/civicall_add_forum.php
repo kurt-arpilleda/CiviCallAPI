@@ -1,5 +1,4 @@
 <?php
-// civicall_add_forum.php
 require_once '../kurt_dbCon.php';
 
 $response = array();
@@ -33,7 +32,7 @@ $tokenRow = $tokenResult->fetch_assoc();
 $userId = $tokenRow['userId'];
 $tokenStmt->close();
 
-$userStmt = $db->prepare("SELECT isVerified FROM tbl_user WHERE userId = ?");
+$userStmt = $db->prepare("SELECT isVerified, campus FROM tbl_user WHERE userId = ?");
 $userStmt->bind_param("i", $userId);
 $userStmt->execute();
 $userResult = $userStmt->get_result();
@@ -50,6 +49,7 @@ if ($userResult->num_rows === 0) {
 
 $userRow = $userResult->fetch_assoc();
 $isVerified = (int)$userRow['isVerified'];
+$userCampus = (int)$userRow['campus'];
 $userStmt->close();
 
 if ($isVerified !== 1) {
@@ -62,6 +62,8 @@ if ($isVerified !== 1) {
 }
 
 $message = isset($_POST['message']) ? trim($_POST['message']) : '';
+$campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+
 if ($message === '') {
     $response['success'] = false;
     $response['message'] = 'Forum message is required.';
@@ -71,8 +73,17 @@ if ($message === '') {
     exit;
 }
 
-$insertStmt = $db->prepare("INSERT INTO tbl_forum (userId, message, upCount, downCount, isRemove, createdAt) VALUES (?, ?, 0, 0, 0, NOW())");
-$insertStmt->bind_param("is", $userId, $message);
+if ($campus === '') {
+    $response['success'] = false;
+    $response['message'] = 'Campus selection is required.';
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
+
+$insertStmt = $db->prepare("INSERT INTO tbl_forum (userId, message, campus, upCount, downCount, isRemove, createdAt) VALUES (?, ?, ?, 0, 0, 0, NOW())");
+$insertStmt->bind_param("iss", $userId, $message, $campus);
 
 if (!$insertStmt->execute()) {
     $response['success'] = false;

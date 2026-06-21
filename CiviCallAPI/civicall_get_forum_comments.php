@@ -32,26 +32,18 @@ $tokenRow = $tokenResult->fetch_assoc();
 $currentUserId = $tokenRow['userId'];
 $tokenStmt->close();
 
-$userStmt = $db->prepare("SELECT campus FROM tbl_user WHERE userId = ?");
-$userStmt->bind_param("i", $currentUserId);
-$userStmt->execute();
-$userResult = $userStmt->get_result();
+$forumId = isset($_POST['forumId']) ? (int)$_POST['forumId'] : 0;
 
-if ($userResult->num_rows === 0) {
+if ($forumId <= 0) {
     $response['success'] = false;
-    $response['message'] = 'User not found.';
-    $userStmt->close();
+    $response['message'] = 'Forum ID is required.';
     header('Content-Type: application/json');
     echo json_encode($response);
     $db->close();
     exit;
 }
 
-$userRow = $userResult->fetch_assoc();
-$userCampus = (int)$userRow['campus'];
-$userStmt->close();
-
-$query = "
+$postStmt = $db->prepare("
     SELECT 
         f.forumId,
         f.userId,
@@ -74,31 +66,67 @@ $query = "
     JOIN tbl_user u ON u.userId = f.userId
     LEFT JOIN tbl_campus c ON c.campusId = u.campus
     LEFT JOIN tbl_forum_votes v ON v.forumId = f.forumId AND v.userId = ?
-    WHERE f.isRemove = 0 AND FIND_IN_SET(?, f.campus) > 0
-    ORDER BY f.createdAt DESC
-";
+    WHERE f.forumId = ? AND f.isRemove = 0
+");
+$postStmt->bind_param("ii", $currentUserId, $forumId);
+$postStmt->execute();
+$postResult = $postStmt->get_result();
 
-$stmt = $db->prepare($query);
-$stmt->bind_param("ii", $currentUserId, $userCampus);
-$stmt->execute();
-$result = $stmt->get_result();
+if ($postResult->num_rows === 0) {
+    $response['success'] = false;
+    $response['message'] = 'Forum post not found.';
+    $postStmt->close();
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
 
-$posts = array();
-while ($row = $result->fetch_assoc()) {
+$post = $postResult->fetch_assoc();
+$postStmt->close();
+
+$post['forumId'] = (int)$post['forumId'];
+$post['userId'] = (int)$post['userId'];
+$post['upCount'] = (int)$post['upCount'];
+$post['downCount'] = (int)$post['downCount'];
+$post['commentCount'] = (int)$post['commentCount'];
+$post['isRemove'] = (int)$post['isRemove'];
+$post['userCampus'] = (int)$post['userCampus'];
+$post['userVoteType'] = $post['userVoteType'] !== null ? (int)$post['userVoteType'] : null;
+
+$commentStmt = $db->prepare("
+    SELECT 
+        fc.commentId,
+        fc.forumId,
+        fc.userId,
+        fc.commentText,
+        fc.createdAt,
+        u.firstName,
+        u.lastName,
+        u.photo_url,
+        c.campusName
+    FROM tbl_forumcomment fc
+    JOIN tbl_user u ON u.userId = fc.userId
+    LEFT JOIN tbl_campus c ON c.campusId = u.campus
+    WHERE fc.forumId = ?
+    ORDER BY fc.createdAt ASC
+");
+$commentStmt->bind_param("i", $forumId);
+$commentStmt->execute();
+$commentResult = $commentStmt->get_result();
+
+$comments = array();
+while ($row = $commentResult->fetch_assoc()) {
+    $row['commentId'] = (int)$row['commentId'];
     $row['forumId'] = (int)$row['forumId'];
     $row['userId'] = (int)$row['userId'];
-    $row['upCount'] = (int)$row['upCount'];
-    $row['downCount'] = (int)$row['downCount'];
-    $row['commentCount'] = (int)$row['commentCount'];
-    $row['isRemove'] = (int)$row['isRemove'];
-    $row['userCampus'] = (int)$row['userCampus'];
-    $row['userVoteType'] = $row['userVoteType'] !== null ? (int)$row['userVoteType'] : null;
-    $posts[] = $row;
+    $comments[] = $row;
 }
-$stmt->close();
+$commentStmt->close();
 
 $response['success'] = true;
-$response['posts'] = $posts;
+$response['post'] = $post;
+$response['comments'] = $comments;
 
 header('Content-Type: application/json');
 echo json_encode($response);
