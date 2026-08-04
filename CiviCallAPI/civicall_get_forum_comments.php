@@ -105,10 +105,10 @@ $commentStmt = $db->prepare("
         u.lastName,
         u.photo_url,
         c.campusName
-    FROM tbl_forumcomment fc
+FROM tbl_forumcomment fc
     JOIN tbl_user u ON u.userId = fc.userId
     LEFT JOIN tbl_campus c ON c.campusId = u.campus
-    WHERE fc.forumId = ?
+    WHERE fc.forumId = ? AND fc.isRemove = 0
     ORDER BY fc.createdAt ASC
 ");
 $commentStmt->bind_param("i", $forumId);
