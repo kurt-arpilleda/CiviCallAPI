@@ -32,12 +32,12 @@ $tokenRow = $tokenResult->fetch_assoc();
 $userId = $tokenRow['userId'];
 $tokenStmt->close();
 
-$targetType = isset($_POST['targetType']) ? trim($_POST['targetType']) : '';
+$targetType = isset($_POST['targetType']) ? (int)$_POST['targetType'] : -1;
 $targetId = isset($_POST['targetId']) ? (int)$_POST['targetId'] : 0;
 $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
 $details = isset($_POST['details']) ? trim($_POST['details']) : '';
 
-if ($targetType !== 'post' && $targetType !== 'comment') {
+if ($targetType !== 0 && $targetType !== 1) {
     $response['success'] = false;
     $response['message'] = 'Invalid target type.';
     header('Content-Type: application/json');
@@ -64,7 +64,7 @@ if ($reason === '') {
     exit;
 }
 
-if ($targetType === 'post') {
+if ($targetType === 0) {
     $checkStmt = $db->prepare("SELECT forumId FROM tbl_forum WHERE forumId = ? AND isRemove = 0");
     $checkStmt->bind_param("i", $targetId);
 } else {
@@ -76,7 +76,7 @@ $checkResult = $checkStmt->get_result();
 
 if ($checkResult->num_rows === 0) {
     $response['success'] = false;
-    $response['message'] = $targetType === 'post' ? 'Forum post not found.' : 'Comment not found.';
+    $response['message'] = $targetType === 0 ? 'Forum post not found.' : 'Comment not found.';
     $checkStmt->close();
     header('Content-Type: application/json');
     echo json_encode($response);
@@ -86,13 +86,13 @@ if ($checkResult->num_rows === 0) {
 $checkStmt->close();
 
 $dupStmt = $db->prepare("SELECT reportId FROM tbl_forumreport WHERE targetType = ? AND targetId = ? AND reporterId = ?");
-$dupStmt->bind_param("sii", $targetType, $targetId, $userId);
+$dupStmt->bind_param("iii", $targetType, $targetId, $userId);
 $dupStmt->execute();
 $dupResult = $dupStmt->get_result();
 
 if ($dupResult->num_rows > 0) {
     $response['success'] = false;
-    $response['message'] = 'You have already reported this ' . $targetType . '.';
+    $response['message'] = 'You have already reported this ' . ($targetType === 0 ? 'post' : 'comment') . '.';
     $dupStmt->close();
     header('Content-Type: application/json');
     echo json_encode($response);
@@ -102,7 +102,7 @@ if ($dupResult->num_rows > 0) {
 $dupStmt->close();
 
 $insertStmt = $db->prepare("INSERT INTO tbl_forumreport (targetType, targetId, reporterId, reason, details, status, createdAt) VALUES (?, ?, ?, ?, ?, 0, NOW())");
-$insertStmt->bind_param("siiss", $targetType, $targetId, $userId, $reason, $details);
+$insertStmt->bind_param("iiiss", $targetType, $targetId, $userId, $reason, $details);
 
 if (!$insertStmt->execute()) {
     $response['success'] = false;
