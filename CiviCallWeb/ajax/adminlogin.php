@@ -53,7 +53,7 @@ if ($role === 'super') {
     $response['redirect'] = '?url=dashboard';
 
 } elseif ($role === 'sub') {
-    $stmt = $db->prepare("SELECT subId, email, password FROM tbl_subadmin WHERE email = ? LIMIT 1");
+    $stmt = $db->prepare("SELECT subId, name, email, password FROM tbl_subadmin WHERE email = ? LIMIT 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -79,6 +79,7 @@ if ($role === 'super') {
     }
 
     $_SESSION['admin_id']   = $admin['subId'];
+    $_SESSION['admin_name'] = $admin['name'];
     $_SESSION['admin_email']= $admin['email'];
     $_SESSION['admin_role'] = 'sub';
 
