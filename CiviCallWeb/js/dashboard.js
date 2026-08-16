@@ -29,3 +29,22 @@ window.addEventListener('resize', function() {
         sidebar.classList.remove('open');
     }
 });
+
+var logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!confirm('Are you sure you want to logout?')) return;
+
+        fetch('ajax/adminLogout.php', {
+            method: 'POST'
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            window.location.href = data.redirect ? data.redirect : 'index.php?url=login';
+        })
+        .catch(function() {
+            window.location.href = 'index.php?url=login';
+        });
+    });
+}

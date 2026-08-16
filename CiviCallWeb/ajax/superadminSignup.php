@@ -11,8 +11,6 @@ $email    = isset($_POST['email'])    ? trim($_POST['email'])    : '';
 $password = isset($_POST['password']) ? $_POST['password']       : '';
 $regCode  = isset($_POST['regCode'])  ? trim($_POST['regCode'])  : '';
 
-define('SUPER_ADMIN_REG_CODE', 'CIVIC2025');
-
 if ($name === '' || $email === '' || $password === '' || $regCode === '') {
     $response['success'] = false;
     $response['message'] = 'All fields are required.';
@@ -20,10 +18,27 @@ if ($name === '' || $email === '' || $password === '' || $regCode === '') {
     exit;
 }
 
-if ($regCode !== SUPER_ADMIN_REG_CODE) {
+$codeStmt = $db->prepare("SELECT passCode FROM tbl_superadmincode LIMIT 1");
+$codeStmt->execute();
+$codeResult = $codeStmt->get_result();
+
+if ($codeResult->num_rows === 0) {
+    $response['success'] = false;
+    $response['message'] = 'Access code not configured.';
+    $codeStmt->close();
+    echo json_encode($response);
+    $db->close();
+    exit;
+}
+
+$codeRow = $codeResult->fetch_assoc();
+$codeStmt->close();
+
+if ($regCode !== $codeRow['passCode']) {
     $response['success'] = false;
     $response['message'] = 'Invalid registration code.';
     echo json_encode($response);
+    $db->close();
     exit;
 }
 
@@ -44,7 +59,7 @@ $checkStmt->close();
 
 $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-$stmt = $db->prepare("INSERT INTO tbl_superadmin (name, email, password, createdAt) VALUES (?, ?, ?, NOW())");
+$stmt = $db->prepare("INSERT INTO tbl_superadmin (name, email, password, isActive, createdAt) VALUES (?, ?, ?, 0, NOW())");
 $stmt->bind_param("sss", $name, $email, $hashedPassword);
 
 if ($stmt->execute()) {

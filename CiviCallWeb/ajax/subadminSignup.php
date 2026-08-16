@@ -42,7 +42,7 @@ $checkStmt->close();
 
 $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-$stmt = $db->prepare("INSERT INTO tbl_subadmin (name, email, password, campusId, createdAt) VALUES (?, ?, ?, ?, NOW())");
+$stmt = $db->prepare("INSERT INTO tbl_subadmin (name, email, password, campusId, createdAt, status, isActive) VALUES (?, ?, ?, ?, NOW(), 1, 0)");
 $stmt->bind_param("sssi", $name, $email, $hashedPassword, $campusId);
 
 if ($stmt->execute()) {

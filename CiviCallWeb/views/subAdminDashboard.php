@@ -1,5 +1,5 @@
 <?php
-require_once '../kurt_dbCon.php';
+require_once __DIR__ . '/../../kurt_dbCon.php';
 
 $campusList = [];
 $campusResult = $db->query("SELECT campusId, campusName FROM tbl_campus ORDER BY campusName ASC");
@@ -53,8 +53,8 @@ $db->close();
             <li class="nav-item"><a href="civicadmin_feedbackmanagement.php" class="nav-link"><i class="fas fa-star"></i> Feedback</a></li>
             <li class="nav-item"><a href="#" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
         </ul>
-        <div class="sidebar-footer">
-            <a href="civicadmin_login.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+<div class="sidebar-footer">
+            <a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </aside>
 

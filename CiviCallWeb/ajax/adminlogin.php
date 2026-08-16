@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../kurt_dbCon.php';
+require_once 'adminLog.php';
 
 header('Content-Type: application/json');
 
@@ -43,6 +44,13 @@ if ($role === 'super') {
         exit;
     }
 
+    $updateStmt = $db->prepare("UPDATE tbl_superadmin SET isActive = 1 WHERE supId = ?");
+    $updateStmt->bind_param("i", $admin['supId']);
+    $updateStmt->execute();
+    $updateStmt->close();
+
+    logAdminAction($db, 0, 0);
+
     $_SESSION['admin_id']   = $admin['supId'];
     $_SESSION['admin_name'] = $admin['name'];
     $_SESSION['admin_email']= $admin['email'];
@@ -77,6 +85,13 @@ if ($role === 'super') {
         $db->close();
         exit;
     }
+
+    $updateStmt = $db->prepare("UPDATE tbl_subadmin SET isActive = 1 WHERE subId = ?");
+    $updateStmt->bind_param("i", $admin['subId']);
+    $updateStmt->execute();
+    $updateStmt->close();
+
+    logAdminAction($db, 1, 0);
 
     $_SESSION['admin_id']   = $admin['subId'];
     $_SESSION['admin_name'] = $admin['name'];

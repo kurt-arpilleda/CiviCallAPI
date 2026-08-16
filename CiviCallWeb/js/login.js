@@ -1,4 +1,3 @@
-var SUPER_ADMIN_REG_CODE = 'CIVIC2025';
 var verifiedCode = '';
 
 window.addEventListener('load', function() {
@@ -268,10 +267,28 @@ accessCodeSubmit.addEventListener('click', function() {
 
   setLoading(accessCodeSubmit, true);
 
-  setTimeout(function() {
-    setLoading(accessCodeSubmit, false);
+  var formData = new FormData();
+  formData.append('code', code);
 
-    if (code === SUPER_ADMIN_REG_CODE) {
+  fetch('ajax/superadminCode.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(res) { return res.text(); })
+  .then(function(text) {
+    setLoading(accessCodeSubmit, false);
+    var data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      console.error('Non-JSON response from superadminCode.php:', text);
+      accessCodeError.textContent = 'Server error. Check console.';
+      accessCodeError.classList.add('visible');
+      shake(modalAccessCode);
+      return;
+    }
+
+    if (data.success) {
       verifiedCode = code;
       accessCodeError.classList.remove('visible');
       modalAccessCode.style.display = 'none';
@@ -283,12 +300,19 @@ accessCodeSubmit.addEventListener('click', function() {
       hideMsg('signupSuccessMsg');
       document.getElementById('signupName').focus();
     } else {
+      accessCodeError.textContent = data.message;
       accessCodeError.classList.add('visible');
       shake(modalAccessCode);
       accessCodeInput.value = '';
       accessCodeInput.focus();
     }
-  }, 900);
+  })
+  .catch(function() {
+    setLoading(accessCodeSubmit, false);
+    accessCodeError.textContent = 'Network error. Please try again.';
+    accessCodeError.classList.add('visible');
+    shake(modalAccessCode);
+  });
 });
 
 accessCodeInput.addEventListener('keydown', function(e) {
