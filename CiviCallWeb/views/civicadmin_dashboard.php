@@ -99,7 +99,7 @@
         <ul class="nav-menu">
             <li class="nav-item"><a href="?url=dashboard" class="nav-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li class="nav-item"><a href="civicadmin_engagementmanagement.php" class="nav-link"><i class="fas fa-calendar-alt"></i> Engagements</a></li>
-            <li class="nav-item"><a href="civicadmin_usermanagement.php" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
+         <li class="nav-item"><a href="?url=usermanagement" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
             <?php if ($_SESSION['admin_role'] === 'super') { ?>
             <li class="nav-item"><a href="?url=subadmin" class="nav-link"><i class="fas fa-user-shield"></i> Sub Admin</a></li>
             <?php } ?>

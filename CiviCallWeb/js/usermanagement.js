@@ -29,75 +29,87 @@ window.addEventListener('resize', function() {
 
 const modal = document.getElementById('userDetailModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
-const tbody = document.getElementById('userTableBody');
-const rowTemplate = document.getElementById('userRowTemplate');
-const actualRows = Array.from(rowTemplate.content.children);
-const skeletonRowsCount = actualRows.length;
 
-function generateSkeletonRows() {
-    let html = '';
-    for (let i = 0; i < skeletonRowsCount; i++) {
-        html += `<tr class="skeleton-row">
-            <td><div class="skeleton-avatar"></div><div class="skeleton-text" style="width:120px"></div></td>
-            <td><div class="skeleton-text" style="width:150px"></div><div class="skeleton-text" style="width:80px; margin-top:4px"></div></td>
-            <td><div class="skeleton-text" style="width:100px"></div></td>
-            <td><div class="skeleton-text" style="width:80px"></div></td>
-            <td><div class="skeleton-text" style="width:90px"></div></td>
-            <td><div class="skeleton-icon"></div><div class="skeleton-icon"></div><div class="skeleton-icon"></div></td>
-        </tr>`;
-    }
-    tbody.innerHTML = html;
+function closeModal() {
+    modal.style.display = 'none';
 }
-
-function loadActualRows() {
-    tbody.innerHTML = '';
-    actualRows.forEach(row => {
-        tbody.appendChild(row.cloneNode(true));
-    });
-    attachEventDelegation();
-}
-
-function attachEventDelegation() {
-    document.querySelectorAll('.action-btn.view').forEach(btn => {
-        btn.removeEventListener('click', handleViewClick);
-        btn.addEventListener('click', handleViewClick);
-    });
-    document.querySelectorAll('.action-btn.edit').forEach(btn => {
-        btn.removeEventListener('click', () => alert('Edit functionality would be implemented here.'));
-        btn.addEventListener('click', () => alert('Edit functionality would be implemented here.'));
-    });
-    document.querySelectorAll('.action-btn.block').forEach(btn => {
-        btn.removeEventListener('click', () => alert('Block functionality would be implemented here.'));
-        btn.addEventListener('click', () => alert('Block functionality would be implemented here.'));
-    });
-}
-
-function handleViewClick(e) {
-    const btn = e.currentTarget;
-    const row = btn.closest('tr');
-    const nameCell = row.querySelector('.user-info-text strong').innerText;
-    const emailCell = row.querySelector('.user-info-text span').innerText;
-    const contactCell = row.cells[1].innerHTML.split('<br>')[0];
-    const campusCell = row.cells[1].querySelector('span') ? row.cells[1].querySelector('span').innerText : 'N/A';
-    const verificationCell = row.cells[2].innerText.trim();
-    const joinedCell = row.cells[4].innerText;
-    document.getElementById('detailName').innerText = nameCell;
-    document.getElementById('detailEmail').innerText = emailCell;
-    document.getElementById('detailMobile').innerText = contactCell;
-    document.getElementById('detailCampus').innerText = campusCell;
-    document.getElementById('detailUserType').innerText = 'Student';
-    document.getElementById('detailVerification').innerText = verificationCell;
-    document.getElementById('detailJoined').innerText = joinedCell;
-    modal.style.display = 'flex';
-}
-
-function openModal() { modal.style.display = 'flex'; }
-function closeModal() { modal.style.display = 'none'; }
-
 closeModalBtn.addEventListener('click', closeModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+});
 
-generateSkeletonRows();
-setTimeout(() => {
-    loadActualRows();
-}, 800);
+document.querySelectorAll('.action-btn.view').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('detailName').textContent = this.dataset.name || '';
+        document.getElementById('detailEmail').textContent = this.dataset.email || '';
+        document.getElementById('detailMobile').textContent = this.dataset.mobile || '';
+        document.getElementById('detailCampus').textContent = this.dataset.campus || '';
+        document.getElementById('detailUserType').textContent = this.dataset.usertype || '';
+        document.getElementById('detailVerification').textContent = this.dataset.verification || '';
+        document.getElementById('detailJoined').textContent = this.dataset.joined || '';
+
+        const photoImg = document.getElementById('detailPhoto');
+        const photoInitials = document.getElementById('detailPhotoInitials');
+        if (this.dataset.photo) {
+            photoImg.src = this.dataset.photo;
+            photoImg.style.display = 'inline-block';
+            photoInitials.style.display = 'none';
+        } else {
+            photoImg.style.display = 'none';
+            photoInitials.textContent = this.dataset.initials || '';
+            photoInitials.style.display = 'flex';
+        }
+
+        modal.style.display = 'flex';
+    });
+});
+
+const userSearchInput = document.getElementById('userSearchInput');
+const campusFilter = document.getElementById('campusFilter');
+const verificationFilter = document.getElementById('verificationFilter');
+const userTypeFilter = document.getElementById('userTypeFilter');
+const userRows = document.querySelectorAll('#userTableBody tr[data-search]');
+
+function applyUserFilters() {
+    const searchTerm = userSearchInput ? userSearchInput.value.trim().toLowerCase() : '';
+    const campusVal = campusFilter ? campusFilter.value : '';
+    const verificationVal = verificationFilter ? verificationFilter.value : '';
+    const userTypeVal = userTypeFilter ? userTypeFilter.value : '';
+
+    userRows.forEach(row => {
+        const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
+        const matchesCampus = !campusVal || row.dataset.campus === campusVal;
+        const matchesVerification = verificationVal === '' || row.dataset.verification === verificationVal;
+        const matchesUserType = !userTypeVal || row.dataset.usertype === userTypeVal;
+        row.style.display = (matchesSearch && matchesCampus && matchesVerification && matchesUserType) ? '' : 'none';
+    });
+}
+
+if (userSearchInput) userSearchInput.addEventListener('input', applyUserFilters);
+if (campusFilter) campusFilter.addEventListener('change', applyUserFilters);
+if (verificationFilter) verificationFilter.addEventListener('change', applyUserFilters);
+if (userTypeFilter) userTypeFilter.addEventListener('change', applyUserFilters);
+
+document.querySelectorAll('.action-btn.edit').forEach(btn => {
+    btn.addEventListener('click', () => alert('Edit functionality would be implemented here.'));
+});
+document.querySelectorAll('.action-btn.block').forEach(btn => {
+    btn.addEventListener('click', () => alert('Block functionality would be implemented here.'));
+});
+
+// Logout button (if present)
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!confirm('Are you sure you want to logout?')) return;
+        fetch('ajax/adminLogout.php', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                window.location.href = data.redirect ? data.redirect : 'index.php?url=login';
+            })
+            .catch(() => {
+                window.location.href = 'index.php?url=login';
+            });
+    });
+}
