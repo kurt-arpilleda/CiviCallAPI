@@ -84,14 +84,120 @@ if (campusFilter) campusFilter.addEventListener('change', applyUserFilters);
 if (verificationFilter) verificationFilter.addEventListener('change', applyUserFilters);
 if (userTypeFilter) userTypeFilter.addEventListener('change', applyUserFilters);
 
+const editModal = document.getElementById('userEditModal');
+const editForm = document.getElementById('editUserForm');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const editFormMessage = document.getElementById('editFormMessage');
+const editPhotoPreview = document.getElementById('editPhotoPreview');
+const editPhotoInitials = document.getElementById('editPhotoInitials');
+const editPhotoInput = document.getElementById('editPhotoInput');
+const editCampusSelect = document.getElementById('editCampus');
+
+function closeEditModal() {
+    editModal.style.display = 'none';
+    editForm.reset();
+    editFormMessage.textContent = '';
+}
+
 document.querySelectorAll('.action-btn.edit').forEach(btn => {
-    btn.addEventListener('click', () => alert('Edit functionality would be implemented here.'));
+    btn.addEventListener('click', function() {
+        document.getElementById('editUserId').value = this.dataset.userId || '';
+        document.getElementById('editEmail').value = this.dataset.email || '';
+        document.getElementById('editFirstName').value = this.dataset.firstName || '';
+        document.getElementById('editMiddleName').value = this.dataset.middleName || '';
+        document.getElementById('editLastName').value = this.dataset.lastName || '';
+        document.getElementById('editMobile').value = this.dataset.mobile || '';
+        document.getElementById('editEmergency').value = this.dataset.emergency || '';
+        document.getElementById('editAddress').value = this.dataset.address || '';
+        document.getElementById('editBirthday').value = this.dataset.birthday || '';
+        document.getElementById('editGender').value = this.dataset.gender || '0';
+        document.getElementById('editDepartment').value = this.dataset.departmentId || '';
+        document.getElementById('editCourse').value = this.dataset.courseId || '';
+        document.getElementById('editUserType').value = this.dataset.usertypeId || '';
+        document.getElementById('editNstp').value = this.dataset.nstpId || '';
+        document.getElementById('editSrCode').value = this.dataset.srcode || '';
+        document.getElementById('editYrSection').value = this.dataset.yrsection || '';
+
+        // Campus is editable for super admin only
+        editCampusSelect.value = this.dataset.campusId || '';
+        editCampusSelect.disabled = !IS_SUPER_ADMIN;
+
+        editPhotoInput.value = '';
+        if (this.dataset.photo) {
+            editPhotoPreview.src = this.dataset.photo;
+            editPhotoPreview.style.display = 'inline-block';
+            editPhotoInitials.style.display = 'none';
+        } else {
+            editPhotoPreview.style.display = 'none';
+            editPhotoInitials.textContent = this.dataset.initials || '';
+            editPhotoInitials.style.display = 'flex';
+        }
+
+        editFormMessage.textContent = '';
+        editModal.style.display = 'flex';
+    });
 });
+
+if (editPhotoInput) {
+    editPhotoInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                editPhotoPreview.src = e.target.result;
+                editPhotoPreview.style.display = 'inline-block';
+                editPhotoInitials.style.display = 'none';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+}
+
+if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+if (editModal) {
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+    });
+}
+
+if (editForm) {
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(editForm);
+        if (!IS_SUPER_ADMIN) {
+            formData.delete('campusId'); // extra safety; server ignores it anyway for sub admins
+        }
+
+        editFormMessage.style.color = 'var(--gray-600)';
+        editFormMessage.textContent = 'Saving changes...';
+
+        fetch('ajax/civicadmin_edit_user_api.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                editFormMessage.style.color = '#2e7d32';
+                editFormMessage.textContent = data.message || 'User updated successfully.';
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                editFormMessage.style.color = '#d32f2f';
+                editFormMessage.textContent = data.message || 'Failed to update user.';
+            }
+        })
+        .catch(() => {
+            editFormMessage.style.color = '#d32f2f';
+            editFormMessage.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+}
+
 document.querySelectorAll('.action-btn.block').forEach(btn => {
     btn.addEventListener('click', () => alert('Block functionality would be implemented here.'));
 });
 
-five// Logout button (if present)
+// Logout button (if present)
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {

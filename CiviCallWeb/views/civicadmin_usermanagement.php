@@ -70,6 +70,26 @@ while ($row = $userTypeListResult->fetch_assoc()) {
     $userTypeList[] = $row;
 }
 
+$departmentListResult = $db->query("SELECT departmentId, departmentName FROM tbl_department ORDER BY departmentName ASC");
+$departmentList = [];
+while ($row = $departmentListResult->fetch_assoc()) {
+    $departmentList[] = $row;
+}
+
+$courseListResult = $db->query("SELECT courseId, courseName FROM tbl_course ORDER BY courseName ASC");
+$courseList = [];
+while ($row = $courseListResult->fetch_assoc()) {
+    $courseList[] = $row;
+}
+
+$nstpListResult = $db->query("SELECT nstpId, nstpType FROM tbl_nstp ORDER BY nstpType ASC");
+$nstpList = [];
+while ($row = $nstpListResult->fetch_assoc()) {
+    $nstpList[] = $row;
+}
+
+$isSuperAdmin = ($role === 'super');
+
 $db->close();
 ?>
 <!DOCTYPE html>
@@ -222,7 +242,7 @@ $db->close();
     $fullName = trim($user['firstName'] . ' ' . ($user['middleName'] ? $user['middleName'] . ' ' : '') . $user['lastName']);
     $initials = strtoupper(substr($user['firstName'], 0, 1) . substr($user['lastName'], 0, 1));
     if (!empty($user['photo_url'])) {
-        $profilePic = filter_var($user['photo_url'], FILTER_VALIDATE_URL) ? $user['photo_url'] : '../CivicallAPI/profileImage/' . $user['photo_url'];
+        $profilePic = filter_var($user['photo_url'], FILTER_VALIDATE_URL) ? $user['photo_url'] : '../CiviCallAPI/profileImage/' . $user['photo_url'];
     } else {
         $profilePic = '';
     }
@@ -265,7 +285,27 @@ $db->close();
                         <td><?php echo $createdAt; ?></td>
                         <td class="action-buttons">
                             <button class="action-btn view" data-user-id="<?php echo $user['userId']; ?>" data-name="<?php echo htmlspecialchars($fullName); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>" data-mobile="<?php echo htmlspecialchars($user['mobileNum'] ?? ''); ?>" data-campus="<?php echo htmlspecialchars($user['campusName'] ?? 'N/A'); ?>" data-usertype="<?php echo htmlspecialchars($user['userTypeName'] ?? 'N/A'); ?>" data-verification="<?php echo $verificationText; ?>" data-joined="<?php echo $createdAt; ?>" data-photo="<?php echo htmlspecialchars($profilePic); ?>" data-initials="<?php echo htmlspecialchars($initials); ?>"><i class="fas fa-eye"></i></button>
-                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                                                     <button class="action-btn edit"
+                                data-user-id="<?php echo $user['userId']; ?>"
+                                data-first-name="<?php echo htmlspecialchars($user['firstName']); ?>"
+                                data-middle-name="<?php echo htmlspecialchars($user['middleName'] ?? ''); ?>"
+                                data-last-name="<?php echo htmlspecialchars($user['lastName']); ?>"
+                                data-email="<?php echo htmlspecialchars($user['email']); ?>"
+                                data-mobile="<?php echo htmlspecialchars($user['mobileNum'] ?? ''); ?>"
+                                data-emergency="<?php echo htmlspecialchars($user['emergencyNum'] ?? ''); ?>"
+                                data-address="<?php echo htmlspecialchars($user['address'] ?? ''); ?>"
+                                data-birthday="<?php echo htmlspecialchars($user['birthDay'] ?? ''); ?>"
+                                data-gender="<?php echo isset($user['gender']) ? (int)$user['gender'] : ''; ?>"
+                                data-campus-id="<?php echo (int)($user['campusId'] ?? 0); ?>"
+                                data-department-id="<?php echo (int)($user['departmentId'] ?? 0); ?>"
+                                data-course-id="<?php echo (int)($user['courseId'] ?? 0); ?>"
+                                data-usertype-id="<?php echo (int)($user['userType'] ?? 0); ?>"
+                                data-nstp-id="<?php echo (int)($user['nstpId'] ?? 0); ?>"
+                                data-srcode="<?php echo htmlspecialchars($user['srCode'] ?? ''); ?>"
+                                data-yrsection="<?php echo htmlspecialchars($user['yrSection'] ?? ''); ?>"
+                                data-photo="<?php echo htmlspecialchars($profilePic); ?>"
+                                data-initials="<?php echo htmlspecialchars($initials); ?>"
+                            ><i class="fas fa-edit"></i></button>
                             <button class="action-btn block"><i class="fas fa-ban"></i></button>
                         </td>
                     </tr>
@@ -308,6 +348,143 @@ $db->close();
     </div>
 </div>
 
+<div class="modal-overlay" id="userEditModal">
+    <div class="modal-container" style="max-width:560px;">
+        <div class="modal-header"><h3>Edit User</h3><button class="modal-close" id="closeEditModalBtn"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" name="userId">
+
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+                    <img id="editPhotoPreview" src="" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#f0f0f0;display:none;">
+                    <div id="editPhotoInitials" class="user-avatar-small" style="width:64px;height:64px;font-size:1.4rem;display:none;"></div>
+                    <div>
+                        <label for="editPhotoInput" style="font-weight:700;font-size:0.8rem;color:var(--gray-600);cursor:pointer;">
+                            <i class="fas fa-camera"></i> Change Photo
+                        </label>
+                        <input type="file" id="editPhotoInput" name="photo" accept="image/jpeg,image/png,image/jpg,image/webp" style="display:block;margin-top:6px;font-size:0.75rem;">
+                    </div>
+                </div>
+
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Email</div>
+                    <div class="user-detail-value">
+                        <input type="email" id="editEmail" disabled style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);background:var(--gray-100);color:var(--gray-400);">
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">First Name</div>
+                    <div class="user-detail-value"><input type="text" id="editFirstName" name="firstName" required style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Middle Name</div>
+                    <div class="user-detail-value"><input type="text" id="editMiddleName" name="middleName" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Last Name</div>
+                    <div class="user-detail-value"><input type="text" id="editLastName" name="lastName" required style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Mobile</div>
+                    <div class="user-detail-value"><input type="text" id="editMobile" name="mobileNum" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Emergency #</div>
+                    <div class="user-detail-value"><input type="text" id="editEmergency" name="emergencyNum" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Address</div>
+                    <div class="user-detail-value"><input type="text" id="editAddress" name="address" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Birthday</div>
+                    <div class="user-detail-value"><input type="date" id="editBirthday" name="birthDay" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Gender</div>
+                    <div class="user-detail-value">
+                        <select id="editGender" name="gender" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                            <option value="0">Male</option>
+                            <option value="1">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Campus</div>
+                    <div class="user-detail-value">
+                        <select id="editCampus" name="campusId" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+<?php foreach ($campusList as $c): ?>
+                            <option value="<?php echo $c['campusId']; ?>"><?php echo htmlspecialchars($c['campusName']); ?></option>
+<?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Department</div>
+                    <div class="user-detail-value">
+                        <select id="editDepartment" name="departmentId" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                            <option value="">-- None --</option>
+<?php foreach ($departmentList as $d): ?>
+                            <option value="<?php echo $d['departmentId']; ?>"><?php echo htmlspecialchars($d['departmentName']); ?></option>
+<?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Course</div>
+                    <div class="user-detail-value">
+                        <select id="editCourse" name="courseId" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                            <option value="">-- None --</option>
+<?php foreach ($courseList as $co): ?>
+                            <option value="<?php echo $co['courseId']; ?>"><?php echo htmlspecialchars($co['courseName']); ?></option>
+<?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">User Type</div>
+                    <div class="user-detail-value">
+                        <select id="editUserType" name="userTypeId" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+<?php foreach ($userTypeList as $ut): ?>
+                            <option value="<?php echo $ut['userTypeId']; ?>"><?php echo htmlspecialchars($ut['userTypeName']); ?></option>
+<?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">NSTP</div>
+                    <div class="user-detail-value">
+                        <select id="editNstp" name="nstpId" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);">
+                            <option value="">-- None --</option>
+<?php foreach ($nstpList as $n): ?>
+                            <option value="<?php echo $n['nstpId']; ?>"><?php echo htmlspecialchars($n['nstpType']); ?></option>
+<?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">SR Code</div>
+                    <div class="user-detail-value"><input type="text" id="editSrCode" name="srCode" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+                <div class="user-detail-row">
+                    <div class="user-detail-label">Yr & Section</div>
+                    <div class="user-detail-value"><input type="text" id="editYrSection" name="yrSection" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
+                </div>
+
+                <div class="divider"></div>
+                <div id="editFormMessage" style="font-size:0.8rem;font-weight:700;margin-bottom:12px;"></div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" id="cancelEditBtn" style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;">Cancel</button>
+                    <button type="submit" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const IS_SUPER_ADMIN = <?php echo $isSuperAdmin ? 'true' : 'false'; ?>;
+</script>
 <script src="js/usermanagement.js"></script>
 </body>
 </html>
