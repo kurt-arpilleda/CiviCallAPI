@@ -1,13 +1,7 @@
 window.addEventListener('load', function() {
-    setTimeout(function() {
-        var overlay = document.getElementById('skeletonOverlay');
-        if (overlay) {
-            overlay.style.animation = 'skeletonFadeOut 0.4s ease forwards';
-            setTimeout(function() { overlay.style.display = 'none'; }, 400);
-        }
-    }, 1900);
+    var overlay = document.getElementById('skeletonOverlay');
+    if (overlay) overlay.style.display = 'none';
 });
-
 const menuToggle = document.getElementById('menuToggle');
 const sidebar = document.getElementById('sidebar');
 menuToggle.addEventListener('click', function(e) {
@@ -97,7 +91,7 @@ document.querySelectorAll('.action-btn.block').forEach(btn => {
     btn.addEventListener('click', () => alert('Block functionality would be implemented here.'));
 });
 
-// Logout button (if present)
+five// Logout button (if present)
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {

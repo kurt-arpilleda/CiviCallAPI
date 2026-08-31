@@ -1,13 +1,7 @@
 window.addEventListener('load', function() {
-    setTimeout(function() {
-        var overlay = document.getElementById('skeletonOverlay');
-        if (overlay) {
-            overlay.style.animation = 'skeletonFadeOut 0.4s ease forwards';
-            setTimeout(function() { overlay.style.display = 'none'; }, 400);
-        }
-    }, 1900);
+    var overlay = document.getElementById('skeletonOverlay');
+    if (overlay) overlay.style.display = 'none';
 });
-
 var menuToggle = document.getElementById('menuToggle');
 var sidebar = document.getElementById('sidebar');
 

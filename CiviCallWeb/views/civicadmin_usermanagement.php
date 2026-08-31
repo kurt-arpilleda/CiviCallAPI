@@ -196,13 +196,13 @@ $db->close();
 <?php endforeach; ?>
                 </select>
                 <select class="filter-select" id="verificationFilter">
-                    <option value="">Verification Status</option>
+                    <option value="">All Status</option>
                     <option value="1">Verified</option>
                     <option value="0">Pending</option>
                     <option value="2">Rejected</option>
                 </select>
                 <select class="filter-select" id="userTypeFilter">
-                    <option value="">User Type</option>
+                    <option value="">All User Type</option>
 <?php foreach ($userTypeList as $ut): ?>
                     <option value="<?php echo $ut['userTypeId']; ?>"><?php echo htmlspecialchars($ut['userTypeName']); ?></option>
 <?php endforeach; ?>
