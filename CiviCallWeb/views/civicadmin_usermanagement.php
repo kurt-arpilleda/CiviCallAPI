@@ -471,9 +471,8 @@ $db->close();
                     <div class="user-detail-value"><input type="text" id="editYrSection" name="yrSection" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
                 </div>
 
-                <div class="divider"></div>
-                <div id="editFormMessage" style="font-size:0.8rem;font-weight:700;margin-bottom:12px;"></div>
-                <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <div id="editFormMessage" style="font-size:0.8rem;font-weight:700;padding:10px 0 0;"></div>
+                <div class="modal-footer-sticky">
                     <button type="button" id="cancelEditBtn" style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;">Cancel</button>
                     <button type="submit" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer;">Save Changes</button>
                 </div>

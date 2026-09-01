@@ -468,10 +468,13 @@ body {
     background: var(--white);
     max-width: 500px;
     width: 90%;
+    max-height: 90vh;
     border-radius: 28px;
     box-shadow: 0 30px 50px rgba(0,0,0,0.2);
     overflow: hidden;
     animation: fadeInUp 0.2s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
@@ -481,6 +484,7 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--gray-200);
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -497,8 +501,21 @@ body {
 
 .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
+.modal-footer-sticky {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    position: sticky;
+    bottom: -24px;
+    margin: 16px -24px -24px;
+    padding: 16px 24px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+}
 .user-detail-row {
     display: flex;
     margin-bottom: 16px;
