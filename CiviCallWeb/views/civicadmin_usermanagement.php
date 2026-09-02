@@ -266,7 +266,7 @@ $db->close();
                         <td>
                             <div class="user-cell">
                                 <?php if ($profilePic): ?>
-                                <img src="<?php echo $profilePic; ?>" alt="<?php echo $fullName; ?>" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:#f0f0f0;">
+                                <img src="<?php echo $profilePic; ?>" alt="<?php echo $fullName; ?>" class="photo-zoomable" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:#f0f0f0;cursor:pointer;">
                                 <?php else: ?>
                                 <div class="user-avatar-small"><?php echo $initials; ?></div>
                                 <?php endif; ?>
@@ -284,7 +284,28 @@ $db->close();
                         <td><span class="status-dot <?php echo $statusDot; ?>"></span> <?php echo $statusText; ?></td>
                         <td><?php echo $createdAt; ?></td>
                         <td class="action-buttons">
-                            <button class="action-btn view" data-user-id="<?php echo $user['userId']; ?>" data-name="<?php echo htmlspecialchars($fullName); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>" data-mobile="<?php echo htmlspecialchars($user['mobileNum'] ?? ''); ?>" data-campus="<?php echo htmlspecialchars($user['campusName'] ?? 'N/A'); ?>" data-usertype="<?php echo htmlspecialchars($user['userTypeName'] ?? 'N/A'); ?>" data-verification="<?php echo $verificationText; ?>" data-joined="<?php echo $createdAt; ?>" data-photo="<?php echo htmlspecialchars($profilePic); ?>" data-initials="<?php echo htmlspecialchars($initials); ?>"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn view"
+                                data-user-id="<?php echo $user['userId']; ?>"
+                                data-name="<?php echo htmlspecialchars($fullName); ?>"
+                                data-email="<?php echo htmlspecialchars($user['email']); ?>"
+                                data-mobile="<?php echo htmlspecialchars($user['mobileNum'] ?? ''); ?>"
+                                data-emergency="<?php echo htmlspecialchars($user['emergencyNum'] ?? ''); ?>"
+                                data-address="<?php echo htmlspecialchars($user['address'] ?? ''); ?>"
+                                data-campus="<?php echo htmlspecialchars($user['campusName'] ?? 'N/A'); ?>"
+                                data-department="<?php echo htmlspecialchars($user['departmentName'] ?? 'N/A'); ?>"
+                                data-course="<?php echo htmlspecialchars($user['courseName'] ?? 'N/A'); ?>"
+                                data-usertype="<?php echo htmlspecialchars($user['userTypeName'] ?? 'N/A'); ?>"
+                                data-birthday="<?php echo htmlspecialchars($user['birthDay'] ?? ''); ?>"
+                                data-gender="<?php echo isset($user['gender']) ? ((int)$user['gender'] === 1 ? 'Female' : 'Male') : ''; ?>"
+                                data-nstp="<?php echo htmlspecialchars($user['nstpType'] ?? 'N/A'); ?>"
+                                data-srcode="<?php echo htmlspecialchars($user['srCode'] ?? ''); ?>"
+                                data-yrsection="<?php echo htmlspecialchars($user['yrSection'] ?? ''); ?>"
+                                data-verification="<?php echo $verificationText; ?>"
+                                data-verification-level="<?php echo (int)$user['isVerified']; ?>"
+                                data-joined="<?php echo $createdAt; ?>"
+                                data-photo="<?php echo htmlspecialchars($profilePic); ?>"
+                                data-initials="<?php echo htmlspecialchars($initials); ?>"
+                            ><i class="fas fa-eye"></i></button>
                                                      <button class="action-btn edit"
                                 data-user-id="<?php echo $user['userId']; ?>"
                                 data-first-name="<?php echo htmlspecialchars($user['firstName']); ?>"
@@ -328,22 +349,33 @@ $db->close();
     <div class="modal-container">
         <div class="modal-header"><h3>User Details</h3><button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
-            <div class="user-detail-row" style="align-items:center;">
-                <div class="user-detail-label">Photo</div>
-                <div class="user-detail-value">
-                    <img id="detailPhoto" src="" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#f0f0f0;display:none;">
-                    <div id="detailPhotoInitials" class="user-avatar-small" style="width:64px;height:64px;font-size:1.4rem;display:none;"></div>
+            <div class="profile-header">
+                <img id="detailPhoto" src="" alt="" class="profile-photo photo-zoomable" style="display:none;cursor:pointer;">
+                <div id="detailPhotoInitials" class="profile-photo profile-photo-initials" style="display:none;"></div>
+                <div class="profile-name" id="detailName"></div>
+                <div class="profile-email-row">
+                    <span id="detailEmail"></span>
                 </div>
+                <span class="badge-verified" id="detailVerificationBadge"></span>
             </div>
             <div class="divider"></div>
-            <div class="user-detail-row"><div class="user-detail-label">Full Name</div><div class="user-detail-value" id="detailName"></div></div>
-            <div class="user-detail-row"><div class="user-detail-label">Email</div><div class="user-detail-value" id="detailEmail"></div></div>
-            <div class="user-detail-row"><div class="user-detail-label">Mobile</div><div class="user-detail-value" id="detailMobile"></div></div>
-            <div class="user-detail-row"><div class="user-detail-label">Campus</div><div class="user-detail-value" id="detailCampus"></div></div>
-            <div class="user-detail-row"><div class="user-detail-label">User Type</div><div class="user-detail-value" id="detailUserType"></div></div>
-            <div class="divider"></div>
-            <div class="user-detail-row"><div class="user-detail-label">Verification</div><div class="user-detail-value" id="detailVerification"></div></div>
-            <div class="user-detail-row"><div class="user-detail-label">Joined Date</div><div class="user-detail-value" id="detailJoined"></div></div>
+            <div class="profile-list">
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-phone"></i> Mobile</span><span class="detail-item-value" id="detailMobile"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-phone-alt"></i> Emergency #</span><span class="detail-item-value" id="detailEmergency"></span></div>
+                <div class="detail-item detail-item-full"><span class="detail-item-label"><i class="fas fa-map-marker-alt"></i> Address</span><span class="detail-item-value" id="detailAddress"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-birthday-cake"></i> Birthday</span><span class="detail-item-value" id="detailBirthday"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-venus-mars"></i> Gender</span><span class="detail-item-value" id="detailGender"></span></div>
+                <div class="divider"></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-school"></i> Campus</span><span class="detail-item-value" id="detailCampus"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-building"></i> Department</span><span class="detail-item-value" id="detailDepartment"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-book"></i> Course</span><span class="detail-item-value" id="detailCourse"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-user-tag"></i> User Type</span><span class="detail-item-value" id="detailUserType"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-shield-alt"></i> NSTP</span><span class="detail-item-value" id="detailNstp"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-id-badge"></i> SR Code</span><span class="detail-item-value" id="detailSrCode"></span></div>
+                <div class="detail-item"><span class="detail-item-label"><i class="fas fa-layer-group"></i> Yr & Section</span><span class="detail-item-value" id="detailYrSection"></span></div>
+                <div class="divider"></div>
+                <div class="detail-item detail-item-full"><span class="detail-item-label"><i class="fas fa-calendar-check"></i> Joined</span><span class="detail-item-value" id="detailJoined"></span></div>
+            </div>
         </div>
     </div>
 </div>
@@ -355,23 +387,18 @@ $db->close();
             <form id="editUserForm">
                 <input type="hidden" id="editUserId" name="userId">
 
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-                    <img id="editPhotoPreview" src="" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#f0f0f0;display:none;">
-                    <div id="editPhotoInitials" class="user-avatar-small" style="width:64px;height:64px;font-size:1.4rem;display:none;"></div>
-                    <div>
-                        <label for="editPhotoInput" style="font-weight:700;font-size:0.8rem;color:var(--gray-600);cursor:pointer;">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </label>
-                        <input type="file" id="editPhotoInput" name="photo" accept="image/jpeg,image/png,image/jpg,image/webp" style="display:block;margin-top:6px;font-size:0.75rem;">
-                    </div>
+                <div class="profile-header" style="padding-bottom:10px;">
+                    <img id="editPhotoPreview" src="" alt="" class="profile-photo photo-zoomable" style="display:none;cursor:pointer;">
+                    <div id="editPhotoInitials" class="profile-photo profile-photo-initials" style="display:none;"></div>
+                    <label for="editPhotoInput" class="change-photo-label">
+                        <i class="fas fa-camera"></i> Change Photo
+                    </label>
+                    <input type="file" id="editPhotoInput" name="photo" accept="image/jpeg,image/png,image/jpg,image/webp" style="display:none;">
+                    <div class="profile-email-row" id="editEmail"></div>
                 </div>
 
-                <div class="user-detail-row">
-                    <div class="user-detail-label">Email</div>
-                    <div class="user-detail-value">
-                        <input type="email" id="editEmail" disabled style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);background:var(--gray-100);color:var(--gray-400);">
-                    </div>
-                </div>
+                <div class="divider"></div>
+
                 <div class="user-detail-row">
                     <div class="user-detail-label">First Name</div>
                     <div class="user-detail-value"><input type="text" id="editFirstName" name="firstName" required style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gray-200);"></div>
@@ -479,6 +506,11 @@ $db->close();
             </form>
         </div>
     </div>
+</div>
+
+<div class="photo-lightbox" id="photoLightbox">
+    <button class="photo-lightbox-close" id="photoLightboxClose"><i class="fas fa-times"></i></button>
+    <img id="photoLightboxImg" src="" alt="">
 </div>
 
 <script>

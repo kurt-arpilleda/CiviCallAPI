@@ -36,11 +36,25 @@ document.querySelectorAll('.action-btn.view').forEach(btn => {
     btn.addEventListener('click', function() {
         document.getElementById('detailName').textContent = this.dataset.name || '';
         document.getElementById('detailEmail').textContent = this.dataset.email || '';
-        document.getElementById('detailMobile').textContent = this.dataset.mobile || '';
-        document.getElementById('detailCampus').textContent = this.dataset.campus || '';
-        document.getElementById('detailUserType').textContent = this.dataset.usertype || '';
-        document.getElementById('detailVerification').textContent = this.dataset.verification || '';
+        document.getElementById('detailMobile').textContent = this.dataset.mobile || '—';
+        document.getElementById('detailEmergency').textContent = this.dataset.emergency || '—';
+        document.getElementById('detailAddress').textContent = this.dataset.address || '—';
+        document.getElementById('detailBirthday').textContent = this.dataset.birthday || '—';
+        document.getElementById('detailGender').textContent = this.dataset.gender || '—';
+        document.getElementById('detailCampus').textContent = this.dataset.campus || '—';
+        document.getElementById('detailDepartment').textContent = this.dataset.department || '—';
+        document.getElementById('detailCourse').textContent = this.dataset.course || '—';
+        document.getElementById('detailUserType').textContent = this.dataset.usertype || '—';
+        document.getElementById('detailNstp').textContent = this.dataset.nstp || '—';
+        document.getElementById('detailSrCode').textContent = this.dataset.srcode || '—';
+        document.getElementById('detailYrSection').textContent = this.dataset.yrsection || '—';
         document.getElementById('detailJoined').textContent = this.dataset.joined || '';
+
+        const badge = document.getElementById('detailVerificationBadge');
+        badge.textContent = this.dataset.verification || '';
+        badge.className = this.dataset.verificationLevel === '1' ? 'badge-verified'
+            : this.dataset.verificationLevel === '2' ? 'badge-verified badge-rejected'
+            : 'badge-verified badge-pending';
 
         const photoImg = document.getElementById('detailPhoto');
         const photoInitials = document.getElementById('detailPhotoInitials');
@@ -102,7 +116,7 @@ function closeEditModal() {
 document.querySelectorAll('.action-btn.edit').forEach(btn => {
     btn.addEventListener('click', function() {
         document.getElementById('editUserId').value = this.dataset.userId || '';
-        document.getElementById('editEmail').value = this.dataset.email || '';
+        document.getElementById('editEmail').textContent = this.dataset.email || '';
         document.getElementById('editFirstName').value = this.dataset.firstName || '';
         document.getElementById('editMiddleName').value = this.dataset.middleName || '';
         document.getElementById('editLastName').value = this.dataset.lastName || '';
@@ -152,7 +166,9 @@ if (editPhotoInput) {
     });
 }
 
+const closeEditModalBtn = document.getElementById('closeEditModalBtn');
 if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
 if (editModal) {
     editModal.addEventListener('click', (e) => {
         if (e.target === editModal) closeEditModal();
@@ -213,3 +229,33 @@ if (logoutBtn) {
             });
     });
 }
+
+const photoLightbox = document.getElementById('photoLightbox');
+const photoLightboxImg = document.getElementById('photoLightboxImg');
+const photoLightboxClose = document.getElementById('photoLightboxClose');
+
+function openPhotoLightbox(src) {
+    if (!src) return;
+    photoLightboxImg.src = src;
+    photoLightbox.style.display = 'flex';
+}
+
+function closePhotoLightbox() {
+    photoLightbox.style.display = 'none';
+    photoLightboxImg.src = '';
+}
+
+document.addEventListener('click', function(e) {
+    const img = e.target.closest('.photo-zoomable');
+    if (img && img.src && img.style.display !== 'none') {
+        openPhotoLightbox(img.src);
+    }
+});
+
+photoLightboxClose.addEventListener('click', closePhotoLightbox);
+photoLightbox.addEventListener('click', function(e) {
+    if (e.target === photoLightbox) closePhotoLightbox();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && photoLightbox.style.display === 'flex') closePhotoLightbox();
+});
