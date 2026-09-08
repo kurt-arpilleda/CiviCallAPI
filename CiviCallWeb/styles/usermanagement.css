@@ -183,6 +183,32 @@ body {
     margin-top: 4px;
 }
 
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.btn-register-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-register-user:hover {
+    background: var(--red-dark);
+}
+
 .user-profile {
     display: flex;
     align-items: center;
@@ -193,7 +219,6 @@ body {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-200);
 }
-
 .notify-icon {
     position: relative;
     font-size: 1.2rem;
@@ -516,6 +541,117 @@ body {
     background: var(--white);
     border-top: 1px solid var(--gray-200);
 }
+.register-campus-row {
+    margin-bottom: 18px;
+}
+
+.register-campus-row label {
+    display: block;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.register-campus-row select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--gray-200);
+    font-family: inherit;
+}
+
+.register-email-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.register-email-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.register-email-row input[type="email"] {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--gray-200);
+    font-family: inherit;
+}
+
+.register-email-row .btn-remove-row {
+    background: var(--red-soft);
+    color: var(--red);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.register-email-row .btn-remove-row:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gray-50);
+    border: 1px dashed var(--gray-300);
+    color: var(--gray-600);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-add-row:hover {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.register-default-pass-note {
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    background: var(--gray-50);
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.register-results {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.register-result-item {
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.register-result-item.ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.register-result-item.fail {
+    background: #ffe6e6;
+    color: #d32f2f;
+}
+
 .user-detail-row {
     display: flex;
     margin-bottom: 16px;

@@ -230,6 +230,107 @@ if (logoutBtn) {
     });
 }
 
+const registerModal = document.getElementById('userRegisterModal');
+const openRegisterModalBtn = document.getElementById('openRegisterModalBtn');
+const closeRegisterModalBtn = document.getElementById('closeRegisterModalBtn');
+const cancelRegisterBtn = document.getElementById('cancelRegisterBtn');
+const registerForm = document.getElementById('registerUserForm');
+const registerEmailList = document.getElementById('registerEmailList');
+const addRegisterRowBtn = document.getElementById('addRegisterRowBtn');
+const registerFormMessage = document.getElementById('registerFormMessage');
+const registerResults = document.getElementById('registerResults');
+
+function openRegisterModal() {
+    registerResults.innerHTML = '';
+    registerFormMessage.textContent = '';
+    registerModal.style.display = 'flex';
+}
+
+function closeRegisterModal() {
+    registerModal.style.display = 'none';
+    registerForm.reset();
+    registerResults.innerHTML = '';
+    registerFormMessage.textContent = '';
+    while (registerEmailList.children.length > 1) {
+        registerEmailList.removeChild(registerEmailList.lastElementChild);
+    }
+    updateRegisterRemoveButtons();
+}
+
+function updateRegisterRemoveButtons() {
+    const rows = registerEmailList.querySelectorAll('.register-email-row');
+    rows.forEach(row => {
+        row.querySelector('.btn-remove-row').disabled = rows.length <= 1;
+    });
+}
+
+function addRegisterRow() {
+    const row = document.createElement('div');
+    row.className = 'register-email-row';
+    row.innerHTML = '<input type="email" name="emails[]" placeholder="user@example.com" required><button type="button" class="btn-remove-row"><i class="fas fa-trash"></i></button>';
+    registerEmailList.appendChild(row);
+    row.querySelector('.btn-remove-row').addEventListener('click', function() {
+        row.remove();
+        updateRegisterRemoveButtons();
+    });
+    updateRegisterRemoveButtons();
+}
+
+if (openRegisterModalBtn) openRegisterModalBtn.addEventListener('click', openRegisterModal);
+if (closeRegisterModalBtn) closeRegisterModalBtn.addEventListener('click', closeRegisterModal);
+if (cancelRegisterBtn) cancelRegisterBtn.addEventListener('click', closeRegisterModal);
+if (registerModal) {
+    registerModal.addEventListener('click', (e) => {
+        if (e.target === registerModal) closeRegisterModal();
+    });
+    registerModal.querySelectorAll('.btn-remove-row').forEach(btn => {
+        btn.addEventListener('click', function() {
+            btn.closest('.register-email-row').remove();
+            updateRegisterRemoveButtons();
+        });
+    });
+}
+if (addRegisterRowBtn) addRegisterRowBtn.addEventListener('click', addRegisterRow);
+
+if (registerForm) {
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(registerForm);
+        registerResults.innerHTML = '';
+        registerFormMessage.style.color = 'var(--gray-600)';
+        registerFormMessage.textContent = 'Registering users...';
+
+        fetch('ajax/civicadmin_register_user_api.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.results && Array.isArray(data.results)) {
+                data.results.forEach(r => {
+                    const item = document.createElement('div');
+                    item.className = 'register-result-item ' + (r.success ? 'ok' : 'fail');
+                    item.textContent = r.email + ' — ' + r.message;
+                    registerResults.appendChild(item);
+                });
+            }
+            if (data.success) {
+                registerFormMessage.style.color = '#2e7d32';
+                registerFormMessage.textContent = data.message || 'Users registered successfully.';
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                registerFormMessage.style.color = '#d32f2f';
+                registerFormMessage.textContent = data.message || 'Failed to register users.';
+            }
+        })
+        .catch(() => {
+            registerFormMessage.style.color = '#d32f2f';
+            registerFormMessage.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+}
+
 const photoLightbox = document.getElementById('photoLightbox');
 const photoLightboxImg = document.getElementById('photoLightboxImg');
 const photoLightboxClose = document.getElementById('photoLightboxClose');

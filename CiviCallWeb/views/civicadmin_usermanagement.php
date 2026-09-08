@@ -191,14 +191,17 @@ $db->close();
                 <h1>User Management</h1>
                 <p>Manage all registered users, verification status, and activity</p>
             </div>
-            <div class="user-profile">
-                <div class="notify-icon">
-                    <i class="far fa-bell"></i>
-                    <span class="notify-badge">3</span>
-                </div>
-                <div class="user-info">
-                    <div class="user-avatar"><?php echo substr(htmlspecialchars($_SESSION['admin_name']), 0, 2); ?></div>
-                    <div class="user-name"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></div>
+            <div class="top-bar-right">
+                <button class="btn-register-user" id="openRegisterModalBtn"><i class="fas fa-user-plus"></i> Register User</button>
+                <div class="user-profile">
+                    <div class="notify-icon">
+                        <i class="far fa-bell"></i>
+                        <span class="notify-badge">3</span>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-avatar"><?php echo substr(htmlspecialchars($_SESSION['admin_name']), 0, 2); ?></div>
+                        <div class="user-name"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -502,6 +505,41 @@ $db->close();
                 <div class="modal-footer-sticky">
                     <button type="button" id="cancelEditBtn" style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;">Cancel</button>
                     <button type="submit" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="userRegisterModal">
+    <div class="modal-container" style="max-width:520px;">
+        <div class="modal-header"><h3>Register User</h3><button class="modal-close" id="closeRegisterModalBtn"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+            <form id="registerUserForm">
+<?php if ($isSuperAdmin): ?>
+                <div class="register-campus-row">
+                    <label for="registerCampus">Campus</label>
+                    <select id="registerCampus" name="campusId" required>
+                        <option value="">-- Select Campus --</option>
+<?php foreach ($campusList as $c): ?>
+                        <option value="<?php echo $c['campusId']; ?>"><?php echo htmlspecialchars($c['campusName']); ?></option>
+<?php endforeach; ?>
+                    </select>
+                </div>
+<?php endif; ?>
+                <div class="register-email-list" id="registerEmailList">
+                    <div class="register-email-row">
+                        <input type="email" name="emails[]" placeholder="user@example.com" required>
+                        <button type="button" class="btn-remove-row" disabled><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add-row" id="addRegisterRowBtn"><i class="fas fa-plus"></i> Add Another</button>
+                <div class="register-default-pass-note"><i class="fas fa-circle-info"></i> Each account is created with the default password <strong>civicall@2026</strong>.</div>
+                <div id="registerResults" class="register-results"></div>
+                <div id="registerFormMessage" style="font-size:0.8rem;font-weight:700;padding:10px 0 0;"></div>
+                <div class="modal-footer-sticky">
+                    <button type="button" id="cancelRegisterBtn" style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;">Cancel</button>
+                    <button type="submit" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-weight:700;cursor:pointer;">Register</button>
                 </div>
             </form>
         </div>
