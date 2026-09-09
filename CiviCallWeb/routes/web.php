@@ -30,6 +30,13 @@ switch ($url) {
         }
         require_once __DIR__ . '/../views/civicadmin_usermanagement.php';
         break;
+    case 'verification':
+        if (!isset($_SESSION['admin_id'])) {
+            header('Location: ?url=login');
+            exit;
+        }
+        require_once __DIR__ . '/../views/civicadmin_userverfication.php';
+        break;
     default:
         http_response_code(404);
         echo '404 Not Found';

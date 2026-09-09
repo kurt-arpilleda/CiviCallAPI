@@ -1,3 +1,64 @@
+<?php
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: ?url=login');
+    exit;
+}
+require_once __DIR__ . '/../../kurt_dbCon.php';
+
+$role = $_SESSION['admin_role'];
+$adminId = $_SESSION['admin_id'];
+$campusFilter = null;
+
+if ($role === 'sub') {
+    $stmt = $db->prepare("SELECT campusId FROM tbl_subadmin WHERE subId = ?");
+    $stmt->bind_param("i", $adminId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $campusFilter = $row['campusId'];
+    }
+    $stmt->close();
+}
+
+$docTypeLabels = [1 => 'Student ID', 2 => 'Government ID', 3 => 'School Certificate', 4 => 'Barangay Clearance'];
+
+$sql = "
+    SELECT
+        v.userId, v.fileName, v.fileType, v.dateTime,
+        u.firstName, u.middleName, u.lastName, u.email, u.mobileNum,
+        u.campus AS campusId, u.isVerified, c.campusName
+    FROM tbl_userverification v
+    INNER JOIN tbl_user u ON u.userId = v.userId
+    LEFT JOIN tbl_campus c ON c.campusId = u.campus
+";
+
+if ($campusFilter !== null) {
+    $sql .= " WHERE u.campus = ?";
+}
+$sql .= " ORDER BY v.dateTime DESC";
+
+$stmt = $db->prepare($sql);
+if ($campusFilter !== null) {
+    $stmt->bind_param("i", $campusFilter);
+}
+$stmt->execute();
+$verifResult = $stmt->get_result();
+$verifications = [];
+while ($row = $verifResult->fetch_assoc()) {
+    $verifications[] = $row;
+}
+$stmt->close();
+
+$campusListResult = $db->query("SELECT campusId, campusName FROM tbl_campus ORDER BY campusName ASC");
+$campusList = [];
+while ($row = $campusListResult->fetch_assoc()) {
+    $campusList[] = $row;
+}
+
+$isSuperAdmin = ($role === 'super');
+
+$db->close();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +67,7 @@
 <title>CiviCall Admin — Verification Management</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="../styles/verification.css">
+<link rel="stylesheet" href="styles/verification.css">
 </head>
 <body>
 
@@ -135,16 +196,19 @@
             </div>
         </div>
         <ul class="nav-menu">
-            <li class="nav-item"><a href="civicalladmin_dashboard.php" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="civicadmin_engagementmanagement.php" class="nav-link"><i class="fas fa-calendar-alt"></i> Engagements</a></li>
-            <li class="nav-item"><a href="civicadmin_usermanagement.php" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
-            <li class="nav-item"><a href="civicadmin_verificationmanagement.php" class="nav-link active"><i class="fas fa-id-card"></i> Verifications</a></li>
-            <li class="nav-item"><a href="civicadmin_reportmanagement.php" class="nav-link"><i class="fas fa-flag-checkered"></i> Reports</a></li>
-            <li class="nav-item"><a href="civicadmin_feedbackmanagement.php" class="nav-link"><i class="fas fa-star"></i> Feedback</a></li>
+            <li class="nav-item"><a href="?url=dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="?url=engagement" class="nav-link"><i class="fas fa-calendar-alt"></i> Engagements</a></li>
+            <li class="nav-item"><a href="?url=usermanagement" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
+            <?php if ($_SESSION['admin_role'] === 'super') { ?>
+            <li class="nav-item"><a href="?url=subadmin" class="nav-link"><i class="fas fa-user-shield"></i> Sub Admin</a></li>
+            <?php } ?>
+            <li class="nav-item"><a href="?url=verification" class="nav-link active"><i class="fas fa-id-card"></i> Verifications</a></li>
+            <li class="nav-item"><a href="?url=reports" class="nav-link"><i class="fas fa-flag-checkered"></i> Reports</a></li>
+            <li class="nav-item"><a href="?url=feedback" class="nav-link"><i class="fas fa-star"></i> Feedback</a></li>
             <li class="nav-item"><a href="#" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
         </ul>
         <div class="sidebar-footer">
-            <a href="civicadmin_login.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </aside>
 
@@ -161,8 +225,8 @@
                     <span class="notify-badge">3</span>
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar">SA</div>
-                    <div class="user-name">Admin CiviCall</div>
+                    <div class="user-avatar"><?php echo substr(htmlspecialchars($_SESSION['admin_name']), 0, 2); ?></div>
+                    <div class="user-name"><?php echo htmlspecialchars($_SESSION['admin_name']); ?></div>
                 </div>
             </div>
         </div>
@@ -170,28 +234,29 @@
         <div class="filter-bar">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search by name or email...">
+                <input type="text" id="verificationSearchInput" placeholder="Search by name or email...">
             </div>
             <div class="filter-group">
-                <select class="filter-select">
-                    <option>All Status</option>
-                    <option>Pending</option>
-                    <option>Approved</option>
-                    <option>Rejected</option>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="0">Pending</option>
+                    <option value="1">Approved</option>
+                    <option value="2">Rejected</option>
                 </select>
-                <select class="filter-select">
-                    <option>All Document Types</option>
-                    <option>Student ID</option>
-                    <option>Government ID</option>
-                    <option>School Certificate</option>
-                    <option>Barangay Clearance</option>
+                <select class="filter-select" id="docTypeFilter">
+                    <option value="">All Document Types</option>
+<?php foreach ($docTypeLabels as $typeId => $typeLabel): ?>
+                    <option value="<?php echo $typeId; ?>"><?php echo htmlspecialchars($typeLabel); ?></option>
+<?php endforeach; ?>
                 </select>
-                <select class="filter-select">
-                    <option>Campus</option>
-                    <option>Manila</option>
-                    <option>Quezon City</option>
-                    <option>Makati</option>
+<?php if ($isSuperAdmin): ?>
+                <select class="filter-select" id="campusFilter">
+                    <option value="">Campus</option>
+<?php foreach ($campusList as $c): ?>
+                    <option value="<?php echo $c['campusId']; ?>"><?php echo htmlspecialchars($c['campusName']); ?></option>
+<?php endforeach; ?>
                 </select>
+<?php endif; ?>
             </div>
         </div>
 
@@ -200,7 +265,53 @@
                 <thead>
                     <tr><th>User</th><th>Document Type</th><th>Submitted</th><th>Document</th><th>Status</th><th>Actions</th></tr>
                 </thead>
-                <tbody id="verificationTableBody"></tbody>
+                <tbody id="verificationTableBody">
+<?php if (empty($verifications)): ?>
+                    <tr><td colspan="6" style="text-align:center;padding:30px;">No verification requests found.</td></tr>
+<?php else: foreach ($verifications as $v):
+    $fullName = trim($v['firstName'] . ' ' . ($v['middleName'] ? $v['middleName'] . ' ' : '') . $v['lastName']);
+    $initials = strtoupper(substr($v['firstName'], 0, 1) . substr($v['lastName'], 0, 1));
+    $docTypeLabel = $docTypeLabels[(int)$v['fileType']] ?? 'Document';
+    $ext = strtolower(pathinfo($v['fileName'], PATHINFO_EXTENSION));
+    $fileIcon = ($ext === 'pdf') ? 'fa-file-pdf' : (in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) ? 'fa-image' : 'fa-file-alt');
+    $fileUrl = '../CiviCallAPI/fileVerification/' . $v['fileName'];
+    $submittedDate = date('M d, Y', strtotime($v['dateTime']));
+    if ((int)$v['isVerified'] === 1) {
+        $statusClass = 'status-approved';
+        $statusText = 'Approved';
+    } elseif ((int)$v['isVerified'] === 2) {
+        $statusClass = 'status-rejected';
+        $statusText = 'Rejected';
+    } else {
+        $statusClass = 'status-pending';
+        $statusText = 'Pending';
+    }
+?>
+                    <tr data-search="<?php echo htmlspecialchars(strtolower($fullName . ' ' . $v['email'])); ?>" data-status="<?php echo (int)$v['isVerified']; ?>" data-doctype="<?php echo (int)$v['fileType']; ?>" data-campus="<?php echo (int)($v['campusId'] ?? 0); ?>">
+                        <td><div class="user-cell"><div class="user-avatar-small"><?php echo $initials; ?></div><div class="user-info-text"><strong><?php echo htmlspecialchars($fullName); ?></strong><span><?php echo htmlspecialchars($v['email']); ?></span></div></div></td>
+                        <td><?php echo htmlspecialchars($docTypeLabel); ?></td>
+                        <td><?php echo $submittedDate; ?></td>
+                        <td><a href="<?php echo htmlspecialchars($fileUrl); ?>" target="_blank" class="doc-link"><i class="fas <?php echo $fileIcon; ?>"></i> <?php echo htmlspecialchars($v['fileName']); ?></a></td>
+                        <td><span class="status-badge <?php echo $statusClass; ?>"><?php echo $statusText; ?></span></td>
+                        <td class="action-buttons">
+                            <button class="action-btn view-btn"
+                                data-user-id="<?php echo $v['userId']; ?>"
+                                data-name="<?php echo htmlspecialchars($fullName); ?>"
+                                data-email="<?php echo htmlspecialchars($v['email']); ?>"
+                                data-doctype="<?php echo htmlspecialchars($docTypeLabel); ?>"
+                                data-date="<?php echo $submittedDate; ?>"
+                                data-file="<?php echo htmlspecialchars($fileUrl); ?>"
+                                data-filename="<?php echo htmlspecialchars($v['fileName']); ?>"
+                                data-campus="<?php echo htmlspecialchars($v['campusName'] ?? 'N/A'); ?>"
+                                data-mobile="<?php echo htmlspecialchars($v['mobileNum'] ?? ''); ?>"
+                                data-status="<?php echo (int)$v['isVerified']; ?>"
+                            >View</button>
+                            <button class="action-btn approve-btn" data-user-id="<?php echo $v['userId']; ?>" <?php echo ((int)$v['isVerified'] === 1) ? 'disabled style="opacity:0.5;"' : ''; ?>>Approve</button>
+                            <button class="action-btn reject-btn" data-user-id="<?php echo $v['userId']; ?>" <?php echo ((int)$v['isVerified'] === 2) ? 'disabled style="opacity:0.5;"' : ''; ?>>Reject</button>
+                        </td>
+                    </tr>
+<?php endforeach; endif; ?>
+                </tbody>
             </table>
         </div>
 
@@ -214,57 +325,6 @@
     </main>
 </div>
 
-<template id="verificationRowTemplate">
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">JD</div><div class="user-info-text"><strong>Juan Dela Cruz</strong><span>juan.cruz@civicall.com</span></div></div></td>
-        <td>Student ID</td>
-        <td>Mar 28, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-file-pdf"></i> view_id.pdf</a></td>
-        <td><span class="status-badge status-pending">Pending</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn" data-id="1">View</button><button class="action-btn approve-btn">Approve</button><button class="action-btn reject-btn">Reject</button></td>
-    </tr>
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">MS</div><div class="user-info-text"><strong>Maria Santos</strong><span>maria.santos@example.com</span></div></div></td>
-        <td>Government ID</td>
-        <td>Mar 27, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-image"></i> gov_id.png</a></td>
-        <td><span class="status-badge status-pending">Pending</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn">View</button><button class="action-btn approve-btn">Approve</button><button class="action-btn reject-btn">Reject</button></td>
-    </tr>
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">CR</div><div class="user-info-text"><strong>Carlos Reyes</strong><span>carlos.reyes@gmail.com</span></div></div></td>
-        <td>School Certificate</td>
-        <td>Mar 26, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-file-alt"></i> cert.pdf</a></td>
-        <td><span class="status-badge status-pending">Pending</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn">View</button><button class="action-btn approve-btn">Approve</button><button class="action-btn reject-btn">Reject</button></td>
-    </tr>
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">AR</div><div class="user-info-text"><strong>Anna Rivera</strong><span>anna.rivera@student.edu</span></div></div></td>
-        <td>Barangay Clearance</td>
-        <td>Mar 25, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-file-pdf"></i> brgy_clear.pdf</a></td>
-        <td><span class="status-badge status-pending">Pending</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn">View</button><button class="action-btn approve-btn">Approve</button><button class="action-btn reject-btn">Reject</button></td>
-    </tr>
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">ML</div><div class="user-info-text"><strong>Michael Lee</strong><span>michael.lee@civicall.app</span></div></div></td>
-        <td>Student ID</td>
-        <td>Mar 24, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-image"></i> student_id.jpg</a></td>
-        <td><span class="status-badge status-approved">Approved</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn">View</button><button class="action-btn approve-btn" disabled style="opacity:0.5;">Approve</button><button class="action-btn reject-btn">Reject</button></td>
-    </tr>
-    <tr>
-        <td><div class="user-cell"><div class="user-avatar-small">JT</div><div class="user-info-text"><strong>James Tan</strong><span>james.tan@yahoo.com</span></div></div></td>
-        <td>Government ID</td>
-        <td>Mar 22, 2025</td>
-        <td><a href="#" class="doc-link"><i class="fas fa-file-pdf"></i> national_id.pdf</a></td>
-        <td><span class="status-badge status-rejected">Rejected</span></td>
-        <td class="action-buttons"><button class="action-btn view-btn">View</button><button class="action-btn approve-btn">Approve</button><button class="action-btn reject-btn" disabled style="opacity:0.5;">Reject</button></td>
-    </tr>
-</template>
-
 <div class="modal-overlay" id="verificationModal">
     <div class="modal-container">
         <div class="modal-header"><h3>Verification Details</h3><button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button></div>
@@ -273,7 +333,7 @@
             <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value" id="modalEmail"></div></div>
             <div class="detail-row"><div class="detail-label">Document Type</div><div class="detail-value" id="modalDocType"></div></div>
             <div class="detail-row"><div class="detail-label">Submitted</div><div class="detail-value" id="modalDate"></div></div>
-            <div class="detail-row"><div class="detail-label">File</div><div class="detail-value"><a href="#" id="modalFileLink" class="doc-link"><i class="fas fa-download"></i> view_document.pdf</a></div></div>
+            <div class="detail-row"><div class="detail-label">File</div><div class="detail-value"><a href="#" id="modalFileLink" class="doc-link" target="_blank"><i class="fas fa-download"></i> view_document.pdf</a></div></div>
             <div class="divider"></div>
             <div class="detail-row"><div class="detail-label">Campus</div><div class="detail-value" id="modalCampus"></div></div>
             <div class="detail-row"><div class="detail-label">Mobile</div><div class="detail-value" id="modalMobile"></div></div>
@@ -285,6 +345,9 @@
     </div>
 </div>
 
-<script src="../js/verification.js"></script>
+<script>
+    const IS_SUPER_ADMIN = <?php echo $isSuperAdmin ? 'true' : 'false'; ?>;
+</script>
+<script src="js/verification.js"></script>
 </body>
 </html>
