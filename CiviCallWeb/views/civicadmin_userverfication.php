@@ -20,13 +20,13 @@ if ($role === 'sub') {
     $stmt->close();
 }
 
-$docTypeLabels = [1 => 'Student ID', 2 => 'Government ID', 3 => 'School Certificate', 4 => 'Barangay Clearance'];
+$docTypeLabels = [1 => 'Certificate of Registration', 2 => 'Certificate of Graduation', 3 => 'School ID', 4 => 'Valid ID'];
 
 $sql = "
     SELECT
         v.userId, v.fileName, v.fileType, v.dateTime,
         u.firstName, u.middleName, u.lastName, u.email, u.mobileNum,
-        u.campus AS campusId, u.isVerified, c.campusName
+          u.campus AS campusId, u.isVerified, u.photo_url, c.campusName
     FROM tbl_userverification v
     INNER JOIN tbl_user u ON u.userId = v.userId
     LEFT JOIN tbl_campus c ON c.campusId = u.campus
@@ -271,7 +271,12 @@ $db->close();
 <?php else: foreach ($verifications as $v):
     $fullName = trim($v['firstName'] . ' ' . ($v['middleName'] ? $v['middleName'] . ' ' : '') . $v['lastName']);
     $initials = strtoupper(substr($v['firstName'], 0, 1) . substr($v['lastName'], 0, 1));
-    $docTypeLabel = $docTypeLabels[(int)$v['fileType']] ?? 'Document';
+       $docTypeLabel = $docTypeLabels[(int)$v['fileType']] ?? 'Document';
+    if (!empty($v['photo_url'])) {
+        $profilePic = filter_var($v['photo_url'], FILTER_VALIDATE_URL) ? $v['photo_url'] : '../CiviCallAPI/profileImage/' . $v['photo_url'];
+    } else {
+        $profilePic = '';
+    }
     $ext = strtolower(pathinfo($v['fileName'], PATHINFO_EXTENSION));
     $fileIcon = ($ext === 'pdf') ? 'fa-file-pdf' : (in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) ? 'fa-image' : 'fa-file-alt');
     $fileUrl = '../CiviCallAPI/fileVerification/' . $v['fileName'];
@@ -288,7 +293,8 @@ $db->close();
     }
 ?>
                     <tr data-search="<?php echo htmlspecialchars(strtolower($fullName . ' ' . $v['email'])); ?>" data-status="<?php echo (int)$v['isVerified']; ?>" data-doctype="<?php echo (int)$v['fileType']; ?>" data-campus="<?php echo (int)($v['campusId'] ?? 0); ?>">
-                        <td><div class="user-cell"><div class="user-avatar-small"><?php echo $initials; ?></div><div class="user-info-text"><strong><?php echo htmlspecialchars($fullName); ?></strong><span><?php echo htmlspecialchars($v['email']); ?></span></div></div></td>
+                        <td><div class="user-cell"><?php if ($profilePic): ?><img src="<?php echo htmlspecialchars($profilePic); ?>" alt="<?php echo htmlspecialchars($fullName); ?>" class="user-photo photo-zoomable" data-initials="<?php echo $initials; ?>"><?php else: ?><div class="user-avatar-small"><?php echo $initials; ?></div><?php endif; ?><div class="user-info-text">
+                            <strong><?php echo htmlspecialchars($fullName); ?></strong><span><?php echo htmlspecialchars($v['email']); ?></span></div></div></td>
                         <td><?php echo htmlspecialchars($docTypeLabel); ?></td>
                         <td><?php echo $submittedDate; ?></td>
                         <td><a href="<?php echo htmlspecialchars($fileUrl); ?>" target="_blank" class="doc-link"><i class="fas <?php echo $fileIcon; ?>"></i> <?php echo htmlspecialchars($v['fileName']); ?></a></td>
@@ -303,7 +309,9 @@ $db->close();
                                 data-file="<?php echo htmlspecialchars($fileUrl); ?>"
                                 data-filename="<?php echo htmlspecialchars($v['fileName']); ?>"
                                 data-campus="<?php echo htmlspecialchars($v['campusName'] ?? 'N/A'); ?>"
-                                data-mobile="<?php echo htmlspecialchars($v['mobileNum'] ?? ''); ?>"
+                                                               data-mobile="<?php echo htmlspecialchars($v['mobileNum'] ?? ''); ?>"
+                                data-photo="<?php echo htmlspecialchars($profilePic); ?>"
+                                data-initials="<?php echo $initials; ?>"
                                 data-status="<?php echo (int)$v['isVerified']; ?>"
                             >View</button>
                             <button class="action-btn approve-btn" data-user-id="<?php echo $v['userId']; ?>" <?php echo ((int)$v['isVerified'] === 1) ? 'disabled style="opacity:0.5;"' : ''; ?>>Approve</button>
@@ -329,6 +337,10 @@ $db->close();
     <div class="modal-container">
         <div class="modal-header"><h3>Verification Details</h3><button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
+                      <div class="modal-photo-wrap">
+              <img id="modalPhoto" class="modal-photo photo-zoomable" src="" alt="" style="display:none;">
+                <div id="modalPhotoInitials" class="modal-photo modal-photo-initials" style="display:none;"></div>
+            </div>
             <div class="detail-row"><div class="detail-label">Full Name</div><div class="detail-value" id="modalName"></div></div>
             <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value" id="modalEmail"></div></div>
             <div class="detail-row"><div class="detail-label">Document Type</div><div class="detail-value" id="modalDocType"></div></div>
@@ -348,6 +360,23 @@ $db->close();
 <script>
     const IS_SUPER_ADMIN = <?php echo $isSuperAdmin ? 'true' : 'false'; ?>;
 </script>
+<div class="photo-lightbox" id="photoLightbox">
+    <button type="button" class="photo-lightbox-close" id="photoLightboxClose"><i class="fas fa-times"></i></button>
+    <img id="photoLightboxImg" src="" alt="">
+</div>
+
+<div class="confirm-overlay" id="confirmDialog">
+    <div class="confirm-box">
+        <div class="confirm-icon confirm-icon-approve" id="confirmIcon"><i class="fas fa-check"></i></div>
+        <h3 id="confirmTitle"></h3>
+        <p id="confirmMessage"></p>
+        <div class="confirm-actions">
+            <button type="button" class="confirm-btn confirm-cancel" id="confirmCancelBtn">Cancel</button>
+            <button type="button" class="confirm-btn confirm-approve" id="confirmOkBtn">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/verification.js"></script>
 </body>
 </html>

@@ -36,6 +36,65 @@ function closeModal() {
 closeModalBtn.addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
+const confirmDialog = document.getElementById('confirmDialog');
+const confirmIcon = document.getElementById('confirmIcon');
+const confirmTitle = document.getElementById('confirmTitle');
+const confirmMessage = document.getElementById('confirmMessage');
+const confirmOkBtn = document.getElementById('confirmOkBtn');
+const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+let confirmResolver = null;
+
+function showConfirm(options) {
+    const type = options.type || 'approve';
+    confirmTitle.textContent = options.title || 'Are you sure?';
+    confirmMessage.textContent = options.message || '';
+    confirmOkBtn.textContent = options.confirmText || 'Confirm';
+    confirmOkBtn.className = 'confirm-btn confirm-' + type;
+    confirmIcon.className = 'confirm-icon confirm-icon-' + type;
+    confirmIcon.innerHTML = '<i class="fas ' + (options.icon || 'fa-question') + '"></i>';
+    confirmCancelBtn.style.display = options.hideCancel ? 'none' : '';
+    confirmDialog.style.display = 'flex';
+    confirmOkBtn.focus();
+    return new Promise(function(resolve) {
+        confirmResolver = resolve;
+    });
+}
+
+function closeConfirm(result) {
+    confirmDialog.style.display = 'none';
+    if (confirmResolver) {
+        const resolve = confirmResolver;
+        confirmResolver = null;
+        resolve(result);
+    }
+}
+
+confirmOkBtn.addEventListener('click', function() { closeConfirm(true); });
+confirmCancelBtn.addEventListener('click', function() { closeConfirm(false); });
+confirmDialog.addEventListener('click', function(e) {
+    if (e.target === confirmDialog) closeConfirm(false);
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && confirmDialog.style.display === 'flex') closeConfirm(false);
+});
+
+function confirmReview(userId, action) {
+    const approve = action === 'approve';
+    const viewBtn = document.querySelector('.view-btn[data-user-id="' + userId + '"]');
+    const name = viewBtn && viewBtn.dataset.name ? viewBtn.dataset.name : 'this user';
+    return showConfirm({
+        type: approve ? 'approve' : 'reject',
+        icon: approve ? 'fa-check' : 'fa-times',
+        title: approve ? 'Approve Verification' : 'Reject Verification',
+        message: approve
+            ? 'Approve the verification request of ' + name + '? The user will be marked as verified.'
+            : 'Reject the verification request of ' + name + '? The user will be marked as rejected.',
+        confirmText: approve ? 'Yes, Approve' : 'Yes, Reject'
+    }).then(function(ok) {
+        return ok ? reviewVerification(userId, action) : null;
+    });
+}
+
 function setRowProcessing(userId, disabled) {
     document.querySelectorAll('.action-btn[data-user-id="' + userId + '"]').forEach(btn => {
         btn.disabled = disabled;
@@ -57,13 +116,27 @@ function reviewVerification(userId, action) {
         if (data.success) {
             window.location.reload();
         } else {
-            alert(data.message || 'Failed to update verification status.');
+            showConfirm({
+                type: 'reject',
+                icon: 'fa-exclamation',
+                title: 'Action Failed',
+                message: data.message || 'Failed to update verification status.',
+                confirmText: 'OK',
+                hideCancel: true
+            });
             setRowProcessing(userId, false);
         }
         return data;
     })
     .catch(() => {
-        alert('Something went wrong. Please try again.');
+           showConfirm({
+            type: 'reject',
+            icon: 'fa-exclamation',
+            title: 'Something Went Wrong',
+            message: 'Please try again.',
+            confirmText: 'OK',
+            hideCancel: true
+        });
         setRowProcessing(userId, false);
     });
 }
@@ -79,6 +152,22 @@ document.querySelectorAll('.action-btn.view-btn').forEach(btn => {
         document.getElementById('modalCampus').innerText = this.dataset.campus || '';
         document.getElementById('modalMobile').innerText = this.dataset.mobile || '';
 
+        const modalPhoto = document.getElementById('modalPhoto');
+        const modalPhotoInitials = document.getElementById('modalPhotoInitials');
+        modalPhotoInitials.textContent = this.dataset.initials || '';
+        if (this.dataset.photo) {
+            modalPhoto.onerror = function() {
+                modalPhoto.style.display = 'none';
+                modalPhotoInitials.style.display = 'flex';
+            };
+            modalPhoto.src = this.dataset.photo;
+            modalPhoto.style.display = 'block';
+            modalPhotoInitials.style.display = 'none';
+        } else {
+            modalPhoto.style.display = 'none';
+            modalPhotoInitials.style.display = 'flex';
+        }
+
         modal.dataset.userId = this.dataset.userId;
         const approveBtn = document.getElementById('modalApproveBtn');
         const rejectBtn = document.getElementById('modalRejectBtn');
@@ -93,28 +182,28 @@ document.querySelectorAll('.action-btn.view-btn').forEach(btn => {
 
 document.querySelectorAll('.action-btn.approve-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Approve this verification request?')) return;
-        reviewVerification(this.dataset.userId, 'approve');
+        confirmReview(this.dataset.userId, 'approve');
     });
 });
 
 document.querySelectorAll('.action-btn.reject-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Reject this verification request?')) return;
-        reviewVerification(this.dataset.userId, 'reject');
+        confirmReview(this.dataset.userId, 'reject');
     });
 });
 
 document.getElementById('modalApproveBtn').addEventListener('click', function() {
     if (this.disabled) return;
-    if (!confirm('Approve this verification request?')) return;
-    reviewVerification(modal.dataset.userId, 'approve').then(() => closeModal());
+    confirmReview(modal.dataset.userId, 'approve').then(function(data) {
+        if (data && data.success) closeModal();
+    });
 });
 
 document.getElementById('modalRejectBtn').addEventListener('click', function() {
     if (this.disabled) return;
-    if (!confirm('Reject this verification request?')) return;
-    reviewVerification(modal.dataset.userId, 'reject').then(() => closeModal());
+    confirmReview(modal.dataset.userId, 'reject').then(function(data) {
+        if (data && data.success) closeModal();
+    });
 });
 
 const searchInput = document.getElementById('verificationSearchInput');
@@ -142,6 +231,51 @@ if (searchInput) searchInput.addEventListener('input', applyVerificationFilters)
 if (statusFilter) statusFilter.addEventListener('change', applyVerificationFilters);
 if (docTypeFilter) docTypeFilter.addEventListener('change', applyVerificationFilters);
 if (campusFilter) campusFilter.addEventListener('change', applyVerificationFilters);
+
+const photoLightbox = document.getElementById('photoLightbox');
+const photoLightboxImg = document.getElementById('photoLightboxImg');
+const photoLightboxClose = document.getElementById('photoLightboxClose');
+
+function openPhotoLightbox(src) {
+    if (!src) return;
+    photoLightboxImg.src = src;
+    photoLightbox.style.display = 'flex';
+}
+
+function closePhotoLightbox() {
+    photoLightbox.style.display = 'none';
+    photoLightboxImg.src = '';
+}
+
+document.addEventListener('click', function(e) {
+    const img = e.target.closest('.photo-zoomable');
+    if (img && img.src && img.style.display !== 'none') {
+        openPhotoLightbox(img.src);
+    }
+});
+
+photoLightboxClose.addEventListener('click', closePhotoLightbox);
+photoLightbox.addEventListener('click', function(e) {
+    if (e.target === photoLightbox) closePhotoLightbox();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && photoLightbox.style.display === 'flex') closePhotoLightbox();
+});
+
+function replaceBrokenPhoto(img) {
+    const fallback = document.createElement('div');
+    fallback.className = 'user-avatar-small';
+    fallback.textContent = img.dataset.initials || '';
+    img.replaceWith(fallback);
+}
+
+document.querySelectorAll('img.user-photo').forEach(function(img) {
+    if (img.complete && img.naturalWidth === 0) {
+        replaceBrokenPhoto(img);
+    } else {
+        img.addEventListener('error', function() { replaceBrokenPhoto(img); });
+    }
+});
 
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
